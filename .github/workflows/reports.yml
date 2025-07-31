@@ -1,0 +1,110 @@
+name: Slack Reports
+
+on:
+  schedule:
+    # Daily at 9:00 AM UTC (excluding weekends and report days)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Report type to generate'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Determine report type
+      id: report-type
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "type=${{ github.event.inputs.report_type }}" >> $GITHUB_OUTPUT
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        else
+          # Get current date info
+          day=$(date -u +%d)
+          dow=$(date -u +%u)  # 1=Monday, 7=Sunday
+          
+          # Monthly report logic
+          if [ "$day" = "01" ]; then
+            # 1st of month
+            if [ "$dow" = "6" ] || [ "$dow" = "7" ]; then
+              # Saturday or Sunday - skip, will run on Monday
+              echo "type=skip" >> $GITHUB_OUTPUT
+              echo "should_run=false" >> $GITHUB_OUTPUT
+            else
+              # Weekday - run monthly report
+              echo "type=monthly" >> $GITHUB_OUTPUT
+              echo "should_run=true" >> $GITHUB_OUTPUT
+            fi
+          elif [ "$day" = "02" ] || [ "$day" = "03" ]; then
+            # 2nd or 3rd of month
+            prev_month_last=$(date -u -d "$(date +%Y-%m-01) -1 day" +%d)
+            if [ "$dow" = "1" ]; then
+              # Monday - check if we need to run delayed monthly report
+              if [ "$day" = "02" ] && [ "$prev_month_last" = "31" ]; then
+                # 1st was Sunday
+                echo "type=monthly" >> $GITHUB_OUTPUT
+                echo "should_run=true" >> $GITHUB_OUTPUT
+              elif [ "$day" = "03" ] && [ "$prev_month_last" = "31" ] || [ "$prev_month_last" = "30" ]; then
+                # 1st was Saturday
+                echo "type=monthly" >> $GITHUB_OUTPUT
+                echo "should_run=true" >> $GITHUB_OUTPUT
+              else
+                # Regular Monday - weekly report
+                echo "type=weekly" >> $GITHUB_OUTPUT
+                echo "should_run=true" >> $GITHUB_OUTPUT
+              fi
+            else
+              # Not Monday - daily report
+              echo "type=daily" >> $GITHUB_OUTPUT
+              echo "should_run=true" >> $GITHUB_OUTPUT
+            fi
+          elif [ "$dow" = "1" ]; then
+            # Monday (not 1st-3rd) - weekly report
+            echo "type=weekly" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          elif [ "$dow" = "6" ] || [ "$dow" = "7" ]; then
+            # Weekend - skip daily reports
+            echo "type=skip" >> $GITHUB_OUTPUT
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            # Weekday - daily report
+            echo "type=daily" >> $GITHUB_OUTPUT
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+        fi
+    
+    - name: Generate report
+      if: steps.report-type.outputs.should_run == 'true'
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        SLACK_DM_USER_ID: ${{ secrets.SLACK_DM_USER_ID }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        echo "Generating ${{ steps.report-type.outputs.type }} report..."
+        node dist/generate-report.js --type ${{ steps.report-type.outputs.type }}
