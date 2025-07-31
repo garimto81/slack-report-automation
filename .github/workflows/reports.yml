@@ -82,4 +82,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
         echo "Generating ${{ steps.report-type.outputs.type }} report..."
-        node dist/generate-report.js --type ${{ steps.report-type.outputs.type }}
+        node dist/src/generate-report.js --type ${{ steps.report-type.outputs.type }}
