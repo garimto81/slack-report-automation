@@ -38,6 +38,15 @@ jobs:
     - name: Build project
       run: npm run build
     
+    - name: Debug - Check build output
+      run: |
+        echo "=== Checking build output ==="
+        ls -la
+        echo "=== Checking dist folder ==="
+        ls -la dist/ || echo "dist folder not found"
+        echo "=== Finding generate-report.js ==="
+        find . -name "generate-report.js" -type f || echo "generate-report.js not found"
+    
     - name: Determine report type
       id: report-type
       run: |
