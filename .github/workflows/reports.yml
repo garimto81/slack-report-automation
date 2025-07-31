@@ -2,8 +2,11 @@ name: Slack Reports
 
 on:
   schedule:
-    # Daily at 9:00 AM UTC (excluding weekends and report days)
-    - cron: '0 9 * * *'
+    # 한국시간 오전 10시 = UTC 오전 1시
+    # 일간 보고서: 평일 오전 10시 (월요일 제외 - 주간 보고서 우선)
+    - cron: '0 1 * * 2-5'  # 화-금
+    # 주간 보고서: 매주 월요일 오전 10시 (첫번째 월요일 제외 - 월간 보고서 우선)
+    - cron: '0 1 * * 1'    # 월요일
   workflow_dispatch:
     inputs:
       report_type:
@@ -42,55 +45,27 @@ jobs:
           echo "type=${{ github.event.inputs.report_type }}" >> $GITHUB_OUTPUT
           echo "should_run=true" >> $GITHUB_OUTPUT
         else
-          # Get current date info
-          day=$(date -u +%d)
-          dow=$(date -u +%u)  # 1=Monday, 7=Sunday
+          # 한국 시간 기준으로 날짜 정보 가져오기
+          KST_DATE=$(TZ='Asia/Seoul' date '+%Y-%m-%d')
+          KST_DAY=$(TZ='Asia/Seoul' date '+%d')
+          KST_DOW=$(TZ='Asia/Seoul' date '+%u')  # 1=Monday, 7=Sunday
           
-          # Monthly report logic
-          if [ "$day" = "01" ]; then
-            # 1st of month
-            if [ "$dow" = "6" ] || [ "$dow" = "7" ]; then
-              # Saturday or Sunday - skip, will run on Monday
-              echo "type=skip" >> $GITHUB_OUTPUT
-              echo "should_run=false" >> $GITHUB_OUTPUT
-            else
-              # Weekday - run monthly report
+          echo "KST Date: $KST_DATE (Day: $KST_DAY, DOW: $KST_DOW)"
+          
+          if [ "$KST_DOW" = "1" ]; then
+            # 월요일
+            # 첫번째 월요일인지 확인 (날짜가 1-7일 사이)
+            if [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
+              # 첫번째 월요일 - 월간 보고서
               echo "type=monthly" >> $GITHUB_OUTPUT
               echo "should_run=true" >> $GITHUB_OUTPUT
-            fi
-          elif [ "$day" = "02" ] || [ "$day" = "03" ]; then
-            # 2nd or 3rd of month
-            prev_month_last=$(date -u -d "$(date +%Y-%m-01) -1 day" +%d)
-            if [ "$dow" = "1" ]; then
-              # Monday - check if we need to run delayed monthly report
-              if [ "$day" = "02" ] && [ "$prev_month_last" = "31" ]; then
-                # 1st was Sunday
-                echo "type=monthly" >> $GITHUB_OUTPUT
-                echo "should_run=true" >> $GITHUB_OUTPUT
-              elif [ "$day" = "03" ] && [ "$prev_month_last" = "31" ] || [ "$prev_month_last" = "30" ]; then
-                # 1st was Saturday
-                echo "type=monthly" >> $GITHUB_OUTPUT
-                echo "should_run=true" >> $GITHUB_OUTPUT
-              else
-                # Regular Monday - weekly report
-                echo "type=weekly" >> $GITHUB_OUTPUT
-                echo "should_run=true" >> $GITHUB_OUTPUT
-              fi
             else
-              # Not Monday - daily report
-              echo "type=daily" >> $GITHUB_OUTPUT
+              # 나머지 월요일 - 주간 보고서
+              echo "type=weekly" >> $GITHUB_OUTPUT
               echo "should_run=true" >> $GITHUB_OUTPUT
             fi
-          elif [ "$dow" = "1" ]; then
-            # Monday (not 1st-3rd) - weekly report
-            echo "type=weekly" >> $GITHUB_OUTPUT
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          elif [ "$dow" = "6" ] || [ "$dow" = "7" ]; then
-            # Weekend - skip daily reports
-            echo "type=skip" >> $GITHUB_OUTPUT
-            echo "should_run=false" >> $GITHUB_OUTPUT
           else
-            # Weekday - daily report
+            # 화-금 - 일간 보고서
             echo "type=daily" >> $GITHUB_OUTPUT
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
