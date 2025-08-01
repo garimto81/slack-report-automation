@@ -32,6 +32,14 @@ jobs:
     - name: Build project
       run: npm run build
     
+    - name: Check build output (Monthly)
+      run: |
+        echo "=== Monthly Report - Checking build output ==="
+        ls -la dist/ || echo "dist/ not found"
+        ls -la dist/src/ || echo "dist/src/ not found"
+        echo "Looking for generate-report.js..."
+        find . -name "generate-report.js" -type f
+    
     - name: Verify first Monday of month
       id: verify-schedule
       run: |
