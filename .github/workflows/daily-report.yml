@@ -41,4 +41,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
         echo "Generating daily report..."
-        node dist/src/generate-report.js --type daily
+        node dist/generate-report.js --type daily

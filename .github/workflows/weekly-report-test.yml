@@ -54,4 +54,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
         echo "Generating weekly report (test mode)..."
-        node dist/src/generate-report.js --type weekly || echo "Failed to generate report"
+        node dist/generate-report.js --type weekly || echo "Failed to generate report"
