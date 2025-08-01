@@ -26,14 +26,6 @@ jobs:
     - name: Build project
       run: npm run build
     
-    - name: Check build output (Daily)
-      run: |
-        echo "=== Daily Report - Checking build output ==="
-        ls -la dist/ || echo "dist/ not found"
-        ls -la dist/src/ || echo "dist/src/ not found"
-        echo "Looking for generate-report.js..."
-        find . -name "generate-report.js" -type f
-    
     - name: Log execution time
       run: |
         KST_TIME=$(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S')
