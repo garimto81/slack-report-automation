@@ -61,4 +61,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
         echo "Generating monthly report for the previous month..."
-        node dist/generate-report.js --type monthly
+        node dist/src/generate-report.js --type monthly
