@@ -44,12 +44,12 @@ export class ReportService {
   }
 
   async generateWeeklyReport(channelId: string, dmUserIds: string[]): Promise<void> {
-    // 지난 주의 데이터 수집 (월간 보고서와 동일한 구조)
+    // 지난 달의 첫날부터 마지막날까지의 데이터 수집 (월간 보고서와 완전히 동일)
     const now = new Date();
-    const since = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+    const since = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     since.setHours(0, 0, 0, 0);
     
-    const until = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const until = new Date(now.getFullYear(), now.getMonth(), 0);
     until.setHours(23, 59, 59, 999);
     
     console.log(`Weekly report period: ${since.toISOString()} ~ ${until.toISOString()}`);
