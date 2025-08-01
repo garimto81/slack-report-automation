@@ -31,6 +31,19 @@ jobs:
         echo "=== Checking dist folder ==="
         ls -la dist/src/ || echo "dist/src folder not found"
     
+    - name: Check environment variables
+      run: |
+        echo "=== Environment Variables Check ==="
+        echo "SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:0:10}..."
+        echo "SLACK_CHANNEL_ID: $SLACK_CHANNEL_ID"
+        echo "SLACK_DM_USER_IDS: $SLACK_DM_USER_IDS"
+        echo "SUPABASE_URL: $SUPABASE_URL"
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+    
     - name: Generate weekly report (Force run)
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

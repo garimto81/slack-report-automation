@@ -94,12 +94,19 @@ export class SlackService {
 
   async sendDirectMessage(userId: string, text: string): Promise<void> {
     try {
-      await this.client.chat.postMessage({
+      console.log(`Attempting to send DM to user: ${userId}`);
+      const result = await this.client.chat.postMessage({
         channel: userId,
         text: text
       });
-    } catch (error) {
-      console.error('Error sending direct message:', error);
+      console.log(`DM sent successfully to ${userId}:`, result.ok);
+    } catch (error: any) {
+      console.error('Error sending direct message to', userId);
+      console.error('Error details:', error);
+      if (error.data) {
+        console.error('Error response:', error.data);
+      }
+      throw error; // Re-throw to handle in report service
     }
   }
 }

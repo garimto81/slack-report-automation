@@ -15,12 +15,21 @@ export class ReportService {
     since.setDate(since.getDate() - 1);
 
     const messages = await this.slackService.getChannelMessages(channelId, since);
+    console.log(`Found ${messages.length} messages in the last 24 hours`);
+    
     const analysis = await this.geminiService.analyzeMessages(messages, 'daily');
     const reportText = this.formatDailyReport(analysis);
+    console.log('Report text length:', reportText.length);
 
     // Send to all users
+    console.log(`Sending daily report to ${dmUserIds.length} users...`);
     for (const userId of dmUserIds) {
-      await this.slackService.sendDirectMessage(userId, reportText);
+      try {
+        console.log(`Sending to user: ${userId}`);
+        await this.slackService.sendDirectMessage(userId, reportText);
+      } catch (error) {
+        console.error(`Failed to send report to ${userId}:`, error);
+      }
     }
 
     const report: Report = {
@@ -52,12 +61,21 @@ export class ReportService {
     console.log(`Weekly report period: ${since.toISOString()} ~ ${until.toISOString()}`);
 
     const messages = await this.slackService.getChannelMessages(channelId, since);
+    console.log(`Found ${messages.length} messages in the last week`);
+    
     const analysis = await this.geminiService.analyzeMessages(messages, 'weekly');
     const reportText = this.formatWeeklyReport(analysis);
+    console.log('Report text length:', reportText.length);
 
     // Send to all users
+    console.log(`Sending weekly report to ${dmUserIds.length} users...`);
     for (const userId of dmUserIds) {
-      await this.slackService.sendDirectMessage(userId, reportText);
+      try {
+        console.log(`Sending to user: ${userId}`);
+        await this.slackService.sendDirectMessage(userId, reportText);
+      } catch (error) {
+        console.error(`Failed to send report to ${userId}:`, error);
+      }
     }
 
     const report: Report = {
