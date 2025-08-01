@@ -8,8 +8,7 @@ dotenv.config();
 async function generateReport() {
   // Parse command line arguments
   const args = process.argv.slice(2);
-  const typeIndex = args.indexOf('--type');
-  const reportType = typeIndex !== -1 ? args[typeIndex + 1] : 'daily';
+  const reportType = args[0] || 'daily';
 
   // Validate environment variables
   const requiredEnvVars = [
