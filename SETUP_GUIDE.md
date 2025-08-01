@@ -27,6 +27,7 @@
 1. 보고서 받을 사용자 프로필 클릭
 2. "View full profile" 클릭
 3. "More" → "Copy member ID" 클릭
+4. 여러 사용자에게 보내려면 쉼표로 구분하여 입력 (예: U1234567890,U0987654321)
 
 ## 2. Supabase 설정
 
@@ -62,7 +63,7 @@
 |------------|-----|-----|
 | SLACK_BOT_TOKEN | Bot User OAuth Token | xoxb-123456789... |
 | SLACK_CHANNEL_ID | 채널 ID | C1234567890 |
-| SLACK_DM_USER_ID | 사용자 ID | U1234567890 |
+| SLACK_DM_USER_IDS | 사용자 ID들 (쉼표 구분) | U1234567890,U0987654321 |
 | SUPABASE_URL | Project URL | https://xxx.supabase.co |
 | SUPABASE_ANON_KEY | anon key | eyJhbGci... |
 | GEMINI_API_KEY | Gemini API Key | AIzaSy... |

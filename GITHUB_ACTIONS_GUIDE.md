@@ -20,7 +20,7 @@ git push -u origin main
 
 - `SLACK_BOT_TOKEN`: Slack 봇 토큰 (xoxb-로 시작)
 - `SLACK_CHANNEL_ID`: 분석할 채널 ID
-- `SLACK_DM_USER_ID`: U080BA70DC4 (보고서 받을 사용자)
+- `SLACK_DM_USER_IDS`: U080BA70DC4,U1234567890 (보고서 받을 사용자들, 쉼표로 구분)
 - `SUPABASE_URL`: Supabase 프로젝트 URL
 - `SUPABASE_ANON_KEY`: Supabase anon key
 - `GEMINI_API_KEY`: Google Gemini API 키

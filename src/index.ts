@@ -11,7 +11,7 @@ async function main() {
   const requiredEnvVars = [
     'SLACK_BOT_TOKEN',
     'SLACK_CHANNEL_ID',
-    'SLACK_DM_USER_ID',
+    'SLACK_DM_USER_IDS',
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',
     'GEMINI_API_KEY'
@@ -34,11 +34,14 @@ async function main() {
   const geminiService = new GeminiService(process.env.GEMINI_API_KEY!);
   const reportService = new ReportService(slackService, supabaseService, geminiService);
 
+  // Parse user IDs (comma-separated)
+  const dmUserIds = process.env.SLACK_DM_USER_IDS!.split(',').map(id => id.trim());
+
   // Initialize scheduler
   const scheduler = new Scheduler(
     reportService,
     process.env.SLACK_CHANNEL_ID!,
-    process.env.SLACK_DM_USER_ID!
+    dmUserIds
   );
 
   // Parse scheduling configuration

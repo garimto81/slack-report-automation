@@ -10,7 +10,7 @@ export class ReportService {
     private geminiService: GeminiService
   ) {}
 
-  async generateDailyReport(channelId: string, dmUserId: string): Promise<void> {
+  async generateDailyReport(channelId: string, dmUserIds: string[]): Promise<void> {
     const since = new Date();
     since.setDate(since.getDate() - 1);
 
@@ -18,20 +18,23 @@ export class ReportService {
     const analysis = await this.geminiService.analyzeMessages(messages, 'daily');
     const reportText = this.formatDailyReport(analysis);
 
-    await this.slackService.sendDirectMessage(dmUserId, reportText);
+    // Send to all users
+    for (const userId of dmUserIds) {
+      await this.slackService.sendDirectMessage(userId, reportText);
+    }
 
     const report: Report = {
       type: 'daily',
       channelId,
       analysis,
-      sentTo: dmUserId,
+      sentTo: dmUserIds.join(','),
       createdAt: new Date()
     };
 
     await this.supabaseService.saveReport(report);
   }
 
-  async generateWeeklyReport(channelId: string, dmUserId: string): Promise<void> {
+  async generateWeeklyReport(channelId: string, dmUserIds: string[]): Promise<void> {
     const since = new Date();
     since.setDate(since.getDate() - 7);
 
@@ -39,20 +42,23 @@ export class ReportService {
     const analysis = await this.geminiService.analyzeMessages(messages, 'weekly');
     const reportText = this.formatWeeklyReport(analysis);
 
-    await this.slackService.sendDirectMessage(dmUserId, reportText);
+    // Send to all users
+    for (const userId of dmUserIds) {
+      await this.slackService.sendDirectMessage(userId, reportText);
+    }
 
     const report: Report = {
       type: 'weekly',
       channelId,
       analysis,
-      sentTo: dmUserId,
+      sentTo: dmUserIds.join(','),
       createdAt: new Date()
     };
 
     await this.supabaseService.saveReport(report);
   }
 
-  async generateMonthlyReport(channelId: string, dmUserId: string): Promise<void> {
+  async generateMonthlyReport(channelId: string, dmUserIds: string[]): Promise<void> {
     const since = new Date();
     since.setMonth(since.getMonth() - 1);
 
@@ -60,13 +66,16 @@ export class ReportService {
     const analysis = await this.geminiService.analyzeMessages(messages, 'monthly');
     const reportText = this.formatMonthlyReport(analysis);
 
-    await this.slackService.sendDirectMessage(dmUserId, reportText);
+    // Send to all users
+    for (const userId of dmUserIds) {
+      await this.slackService.sendDirectMessage(userId, reportText);
+    }
 
     const report: Report = {
       type: 'monthly',
       channelId,
       analysis,
-      sentTo: dmUserId,
+      sentTo: dmUserIds.join(','),
       createdAt: new Date()
     };
 

@@ -39,7 +39,7 @@
 2. Settings > Secrets and variables > Actions에서 다음 시크릿 추가:
    - `SLACK_BOT_TOKEN`
    - `SLACK_CHANNEL_ID` (분석할 채널 ID)
-   - `SLACK_DM_USER_ID` (보고서 받을 사용자 ID)
+   - `SLACK_DM_USER_IDS` (보고서 받을 사용자 ID들, 쉼표로 구분. 예: U1234567890,U0987654321)
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `GEMINI_API_KEY`

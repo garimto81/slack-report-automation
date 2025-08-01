@@ -9,7 +9,7 @@ export class Scheduler {
   constructor(
     private reportService: ReportService,
     private channelId: string,
-    private dmUserId: string
+    private dmUserIds: string[]
   ) {}
 
   startScheduler(
@@ -20,19 +20,19 @@ export class Scheduler {
     // Daily report
     this.dailyTask = cron.schedule(dailyTime, async () => {
       console.log('Running daily report...');
-      await this.reportService.generateDailyReport(this.channelId, this.dmUserId);
+      await this.reportService.generateDailyReport(this.channelId, this.dmUserIds);
     });
 
     // Weekly report (every Monday at 9 AM)
     this.weeklyTask = cron.schedule(`0 9 * * ${weeklyDay}`, async () => {
       console.log('Running weekly report...');
-      await this.reportService.generateWeeklyReport(this.channelId, this.dmUserId);
+      await this.reportService.generateWeeklyReport(this.channelId, this.dmUserIds);
     });
 
     // Monthly report (1st of each month at 9 AM)
     this.monthlyTask = cron.schedule(`0 9 ${monthlyDay} * *`, async () => {
       console.log('Running monthly report...');
-      await this.reportService.generateMonthlyReport(this.channelId, this.dmUserId);
+      await this.reportService.generateMonthlyReport(this.channelId, this.dmUserIds);
     });
 
     console.log('Scheduler started');

@@ -12,7 +12,7 @@ Missing required environment variable: SLACK_BOT_TOKEN
 2. 다음 시크릿이 모두 설정되었는지 확인:
    - `SLACK_BOT_TOKEN`
    - `SLACK_CHANNEL_ID`
-   - `SLACK_DM_USER_ID`
+   - `SLACK_DM_USER_IDS` (여러 사용자는 쉼표로 구분)
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
    - `GEMINI_API_KEY`
@@ -87,7 +87,7 @@ node debug-slack-permissions.js
 ## 성공 확인 방법
 
 1. **GitHub Actions**: 모든 단계가 ✅ 초록색
-2. **Slack DM**: U080BA70DC4로 보고서 수신
+2. **Slack DM**: SLACK_DM_USER_IDS에 설정된 모든 사용자들이 보고서 수신
 3. **보고서 형식**:
    ```
    *일일 업무 보고*

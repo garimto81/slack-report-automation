@@ -15,7 +15,7 @@ async function generateReport() {
   const requiredEnvVars = [
     'SLACK_BOT_TOKEN',
     'SLACK_CHANNEL_ID',
-    'SLACK_DM_USER_ID',
+    'SLACK_DM_USER_IDS',
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',
     'GEMINI_API_KEY'
@@ -39,21 +39,21 @@ async function generateReport() {
   const reportService = new ReportService(slackService, supabaseService, geminiService);
 
   const channelId = process.env.SLACK_CHANNEL_ID!;
-  const dmUserId = process.env.SLACK_DM_USER_ID!;
+  const dmUserIds = process.env.SLACK_DM_USER_IDS!.split(',').map(id => id.trim());
 
   // Generate report based on type
   try {
     switch (reportType) {
       case 'daily':
-        await reportService.generateDailyReport(channelId, dmUserId);
+        await reportService.generateDailyReport(channelId, dmUserIds);
         console.log('Daily report generated successfully');
         break;
       case 'weekly':
-        await reportService.generateWeeklyReport(channelId, dmUserId);
+        await reportService.generateWeeklyReport(channelId, dmUserIds);
         console.log('Weekly report generated successfully');
         break;
       case 'monthly':
-        await reportService.generateMonthlyReport(channelId, dmUserId);
+        await reportService.generateMonthlyReport(channelId, dmUserIds);
         console.log('Monthly report generated successfully');
         break;
       default:
