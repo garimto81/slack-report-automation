@@ -6,8 +6,8 @@ on:
     - cron: '0 1 * * 1'  # 매주 월요일
   workflow_dispatch:
     inputs:
-      week_offset:
-        description: 'Week offset (0 for last week, -1 for 2 weeks ago)'
+      month_offset:
+        description: 'Month offset (0 for last month, -1 for 2 months ago)'
         required: false
         default: '0'
         type: string
@@ -31,22 +31,26 @@ jobs:
     - name: Build project
       run: npm run build
     
-    - name: Check if first Monday (skip if monthly report day)
-      id: check-first-monday
+    - name: Verify first Monday of month
+      id: verify-schedule
       run: |
         # 한국 시간 기준으로 날짜 확인
+        KST_DATE=$(TZ='Asia/Seoul' date '+%Y-%m-%d')
         KST_DAY=$(TZ='Asia/Seoul' date '+%d')
+        KST_DOW=$(TZ='Asia/Seoul' date '+%u')  # 1=Monday
         
-        if [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
-          echo "is_first_monday=true" >> $GITHUB_OUTPUT
-          echo "This is the first Monday - Monthly report day. Skipping weekly report."
+        echo "Current date (KST): $KST_DATE"
+        echo "Day of month: $KST_DAY"
+        echo "Day of week: $KST_DOW"
+        
+        # 월요일이고 1-7일 사이인지 확인
+        if [ "$KST_DOW" = "1" ] && [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
+          echo "✅ This is the first Monday of the month"
         else
-          echo "is_first_monday=false" >> $GITHUB_OUTPUT
-          echo "This is not the first Monday - Running weekly report."
+          echo "ℹ️ Running via manual trigger or non-first Monday"
         fi
     
     - name: Generate weekly report
-      if: steps.check-first-monday.outputs.is_first_monday == 'false'
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -55,5 +59,5 @@ jobs:
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       run: |
-        echo "Generating weekly report..."
-        node dist/src/generate-report.js --type weekly
+        echo "Generating weekly report for the previous month..."
+        node dist/generate-report.js --type weekly

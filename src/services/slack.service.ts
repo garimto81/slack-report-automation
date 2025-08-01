@@ -8,15 +8,17 @@ export class SlackService {
     this.client = new WebClient(token);
   }
 
-  async getChannelMessages(channelId: string, since: Date): Promise<ChannelMessage[]> {
+  async getChannelMessages(channelId: string, since: Date, until?: Date): Promise<ChannelMessage[]> {
     const messages: ChannelMessage[] = [];
     const oldest = Math.floor(since.getTime() / 1000).toString();
+    const latest = until ? Math.floor(until.getTime() / 1000).toString() : undefined;
 
     try {
       // 1. 메인 채널 메시지 가져오기
       const result = await this.client.conversations.history({
         channel: channelId,
         oldest: oldest,
+        latest: latest,
         limit: 1000
       });
 
@@ -46,6 +48,7 @@ export class SlackService {
                 channel: channelId,
                 ts: msg.thread_ts,
                 oldest: oldest,  // 날짜 필터링 적용
+                latest: latest,  // 종료 날짜 필터링 적용
                 limit: 100      // 쓰레드당 최대 100개 답글
               });
 
@@ -57,8 +60,9 @@ export class SlackService {
                 for (const reply of replies) {
                   const replyTime = parseFloat(reply.ts || '0');
                   const sinceTime = since.getTime() / 1000;
+                  const untilTime = until ? until.getTime() / 1000 : Number.MAX_SAFE_INTEGER;
                   
-                  if (replyTime >= sinceTime) {
+                  if (replyTime >= sinceTime && replyTime <= untilTime) {
                     messages.push({
                       user: reply.user || 'unknown',
                       text: reply.text || '',
@@ -94,12 +98,19 @@ export class SlackService {
 
   async sendDirectMessage(userId: string, text: string): Promise<void> {
     try {
-      await this.client.chat.postMessage({
+      console.log(`Attempting to send DM to user: ${userId}`);
+      const result = await this.client.chat.postMessage({
         channel: userId,
         text: text
       });
-    } catch (error) {
-      console.error('Error sending direct message:', error);
+      console.log(`DM sent successfully to ${userId}:`, result.ok);
+    } catch (error: any) {
+      console.error('Error sending direct message to', userId);
+      console.error('Error details:', error);
+      if (error.data) {
+        console.error('Error response:', error.data);
+      }
+      throw error; // Re-throw to handle in report service
     }
   }
 }

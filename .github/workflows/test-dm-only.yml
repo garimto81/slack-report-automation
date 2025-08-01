@@ -1,0 +1,74 @@
+name: Test DM Only
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-dm:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Check Secrets
+      run: |
+        echo "=== Checking Secrets ==="
+        if [ -z "$SLACK_BOT_TOKEN" ]; then
+          echo "❌ SLACK_BOT_TOKEN is not set"
+        else
+          echo "✅ SLACK_BOT_TOKEN is set (length: ${#SLACK_BOT_TOKEN})"
+          echo "Token prefix: ${SLACK_BOT_TOKEN:0:10}..."
+        fi
+        
+        if [ -z "$SLACK_DM_USER_IDS" ]; then
+          echo "❌ SLACK_DM_USER_IDS is not set"
+        else
+          echo "✅ SLACK_DM_USER_IDS is set: $SLACK_DM_USER_IDS"
+        fi
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+    
+    - name: Test Simple DM
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+      run: |
+        echo "=== Running Simple DM Test ==="
+        npx ts-node src/test-dm-simple.ts
+    
+    - name: Test with API directly
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+      run: |
+        echo "=== Testing with curl ==="
+        
+        # Get first user ID
+        USER_ID=$(echo $SLACK_DM_USER_IDS | cut -d',' -f1)
+        echo "Testing with user: $USER_ID"
+        
+        # Test auth
+        echo "Testing auth..."
+        curl -X POST https://slack.com/api/auth.test \
+          -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+          -H "Content-Type: application/json"
+        
+        echo -e "\n\nSending test message..."
+        # Send message
+        curl -X POST https://slack.com/api/chat.postMessage \
+          -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"channel\":\"$USER_ID\",\"text\":\"Test from GitHub Actions: $(date)\"}"
