@@ -55,10 +55,6 @@ async function generateReport() {
         await reportService.generateMonthlyReport(channelId, dmUserIds);
         console.log('Monthly report generated successfully');
         break;
-      case 'monthly-weekly':
-        await reportService.generateMonthlyWeeklyReport(channelId, dmUserIds);
-        console.log('Monthly-weekly report generated successfully');
-        break;
       default:
         console.error(`Invalid report type: ${reportType}`);
         process.exit(1);

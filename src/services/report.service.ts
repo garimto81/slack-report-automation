@@ -44,18 +44,27 @@ export class ReportService {
   }
 
   async generateWeeklyReport(channelId: string, dmUserIds: string[]): Promise<void> {
+    // 지난 7일간의 데이터 수집
     const since = new Date();
     since.setDate(since.getDate() - 7);
     since.setHours(0, 0, 0, 0);
 
     const messages = await this.slackService.getChannelMessages(channelId, since);
     console.log(`Found ${messages.length} messages in the last 7 days`);
+    
     const analysis = await this.geminiService.analyzeMessages(messages, 'weekly');
     const reportText = this.formatWeeklyReport(analysis);
+    console.log('Weekly report text length:', reportText.length);
 
     // Send to all users
+    console.log(`Sending weekly report to ${dmUserIds.length} users...`);
     for (const userId of dmUserIds) {
-      await this.slackService.sendDirectMessage(userId, reportText);
+      try {
+        console.log(`Sending to user: ${userId}`);
+        await this.slackService.sendDirectMessage(userId, reportText);
+      } catch (error) {
+        console.error(`Failed to send weekly report to ${userId}:`, error);
+      }
     }
 
     const report: Report = {
@@ -100,40 +109,6 @@ export class ReportService {
     await this.supabaseService.saveReport(report);
   }
 
-  async generateMonthlyWeeklyReport(channelId: string, dmUserIds: string[]): Promise<void> {
-    // 지난 7일간의 데이터 수집 (월간 보고서 - 주간 기간)
-    const since = new Date();
-    since.setDate(since.getDate() - 7);
-    since.setHours(0, 0, 0, 0);
-
-    const messages = await this.slackService.getChannelMessages(channelId, since);
-    console.log(`Found ${messages.length} messages in the last 7 days`);
-    
-    const analysis = await this.geminiService.analyzeMessages(messages, 'monthly');
-    const reportText = this.formatMonthlyWeeklyReport(analysis);
-    console.log('Monthly-weekly report text length:', reportText.length);
-
-    // Send to all users
-    console.log(`Sending monthly-weekly report to ${dmUserIds.length} users...`);
-    for (const userId of dmUserIds) {
-      try {
-        console.log(`Sending to user: ${userId}`);
-        await this.slackService.sendDirectMessage(userId, reportText);
-      } catch (error) {
-        console.error(`Failed to send monthly-weekly report to ${userId}:`, error);
-      }
-    }
-
-    const report: Report = {
-      type: 'monthly',
-      channelId,
-      analysis,
-      sentTo: dmUserIds.join(','),
-      createdAt: new Date()
-    };
-
-    await this.supabaseService.saveReport(report);
-  }
 
   private formatDailyReport(analysis: ChannelAnalysis): string {
     let report = `*일일 업무 보고*\n\n`;
@@ -214,31 +189,4 @@ export class ReportService {
     return report;
   }
 
-  private formatMonthlyWeeklyReport(analysis: ChannelAnalysis): string {
-    const now = new Date();
-    const lastWeek = new Date(now);
-    lastWeek.setDate(lastWeek.getDate() - 7);
-    
-    let report = `*월간 업무 보고 (주간 기간)*\n`;
-    report += `_대상 기간: ${lastWeek.getMonth() + 1}월 ${lastWeek.getDate()}일 ~ ${now.getMonth() + 1}월 ${now.getDate()}일_\n\n`;
-    
-    if (analysis.insights?.actionItems && analysis.insights.actionItems.length > 0) {
-      analysis.insights.actionItems.forEach((item: any, index: number) => {
-        if (typeof item === 'string') {
-          // 이전 형식 호환성
-          report += `• ${item}\n`;
-        } else if (item.summary) {
-          // 한 줄 요약 형식
-          report += `• ${item.summary}\n`;
-        } else {
-          // summary가 없는 경우 기본 task 표시
-          report += `• ${item.task}\n`;
-        }
-      });
-    } else {
-      report += `보고할 업무가 없습니다`;
-    }
-
-    return report;
-  }
 }
