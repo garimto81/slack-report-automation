@@ -77,32 +77,15 @@ npm run build
    - Slack에서 사용자 프로필 클릭
    - "View full profile" → "More" → "Copy member ID"
 
-## 🚀 빠른 시작 - 일일 보고서 실행
-
-### 1분 만에 일일 보고서 실행하기
-
-1. **GitHub Actions 페이지 이동**
-   - 👉 https://github.com/garimto81/slack-report-automation/actions
-
-2. **워크플로우 실행**
-   - "Slack Reports" 클릭
-   - "Run workflow" 버튼 클릭
-   - Report type: `daily` 선택
-   - 녹색 "Run workflow" 클릭
-
-3. **결과 확인**
-   - 1-3분 후 Slack DM 확인
-   - 쓰레드 메시지까지 포함된 완전한 보고서 수신
-
 ## 사용 방법
 
 ### GitHub Actions (자동 실행)
 
-- 일일 보고서: 평일(화-금) 오전 10시 KST
-- 주간 보고서: 매주 월요일 오전 10시 KST (첫째 주 제외)
-- 월간 보고서: 매월 첫째 월요일 오전 10시 KST
+- 일일 보고서: 매일 오전 9시 UTC
+- 주간 보고서: 매주 월요일 오전 9시 UTC  
+- 월간 보고서: 매월 1일 오전 9시 UTC
 
-수동 실행: [상세 가이드](GITHUB_ACTIONS_GUIDE.md) 참조
+수동 실행: Actions 탭에서 "Run workflow" 클릭
 
 ### 로컬 실행
 
