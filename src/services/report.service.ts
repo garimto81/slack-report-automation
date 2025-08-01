@@ -35,8 +35,21 @@ export class ReportService {
   }
 
   async generateWeeklyReport(channelId: string, dmUserIds: string[]): Promise<void> {
-    const since = new Date();
-    since.setDate(since.getDate() - 7);
+    // 지난 주 월요일부터 일요일까지의 데이터 수집
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    
+    // 지난 주 월요일 00:00
+    const since = new Date(now.getFullYear(), now.getMonth(), diff - 7);
+    since.setHours(0, 0, 0, 0);
+    
+    // 지난 주 일요일 23:59
+    const until = new Date(since);
+    until.setDate(until.getDate() + 6);
+    until.setHours(23, 59, 59, 999);
+    
+    console.log(`Weekly report period: ${since.toISOString()} ~ ${until.toISOString()}`);
 
     const messages = await this.slackService.getChannelMessages(channelId, since);
     const analysis = await this.geminiService.analyzeMessages(messages, 'weekly');
@@ -59,8 +72,15 @@ export class ReportService {
   }
 
   async generateMonthlyReport(channelId: string, dmUserIds: string[]): Promise<void> {
-    const since = new Date();
-    since.setMonth(since.getMonth() - 1);
+    // 지난 달의 첫날부터 마지막날까지의 데이터 수집
+    const now = new Date();
+    const since = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    since.setHours(0, 0, 0, 0);
+    
+    const until = new Date(now.getFullYear(), now.getMonth(), 0);
+    until.setHours(23, 59, 59, 999);
+    
+    console.log(`Monthly report period: ${since.toISOString()} ~ ${until.toISOString()}`);
 
     const messages = await this.slackService.getChannelMessages(channelId, since);
     const analysis = await this.geminiService.analyzeMessages(messages, 'monthly');
@@ -106,7 +126,12 @@ export class ReportService {
   }
 
   private formatWeeklyReport(analysis: ChannelAnalysis): string {
-    let report = `*주간 업무 보고*\n\n`;
+    const now = new Date();
+    const lastWeek = new Date(now);
+    lastWeek.setDate(lastWeek.getDate() - 7);
+    
+    let report = `*주간 업무 보고*\n`;
+    report += `_대상 기간: ${lastWeek.getMonth() + 1}월 ${lastWeek.getDate()}일 ~ ${now.getMonth() + 1}월 ${now.getDate() - 1}일_\n\n`;
     
     if (analysis.insights?.actionItems && analysis.insights.actionItems.length > 0) {
       analysis.insights.actionItems.forEach((item: any, index: number) => {
@@ -129,7 +154,12 @@ export class ReportService {
   }
 
   private formatMonthlyReport(analysis: ChannelAnalysis): string {
-    let report = `*월간 업무 보고*\n\n`;
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthName = lastMonth.toLocaleDateString('ko-KR', { month: 'long' });
+    
+    let report = `*월간 업무 보고*\n`;
+    report += `_대상 기간: ${monthName}_\n\n`;
     
     if (analysis.insights?.actionItems && analysis.insights.actionItems.length > 0) {
       analysis.insights.actionItems.forEach((item: any, index: number) => {
