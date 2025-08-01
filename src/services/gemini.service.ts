@@ -11,10 +11,12 @@ export class GeminiService {
   }
 
   async analyzeMessages(messages: ChannelMessage[], reportType: 'daily' | 'weekly' | 'monthly'): Promise<ChannelAnalysis> {
-    // 메시지를 텍스트로 변환
-    const messageText = messages.map(msg => 
-      `${msg.user}: ${msg.text}`
-    ).join('\n');
+    // 메시지를 텍스트로 변환 (쓰레드 구조 표시)
+    const messageText = messages.map(msg => {
+      const prefix = msg.is_thread_reply ? '  └─ ' : '';
+      const threadInfo = msg.is_thread_reply ? ` (답글)` : msg.reply_count ? ` (답글 ${msg.reply_count}개)` : '';
+      return `${prefix}${msg.user}: ${msg.text}${threadInfo}`;
+    }).join('\n');
 
     const prompt = this.buildPrompt(messageText, reportType, messages.length);
 

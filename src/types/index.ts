@@ -3,6 +3,10 @@ export interface ChannelMessage {
   text: string;
   timestamp: string;
   thread_ts?: string;
+  parent_user_id?: string;  // 쓰레드 원본 작성자
+  reply_count?: number;     // 답글 수
+  reply_users_count?: number; // 답글 작성자 수
+  is_thread_reply?: boolean;  // 쓰레드 답글 여부
   reactions?: {
     name: string;
     count: number;
