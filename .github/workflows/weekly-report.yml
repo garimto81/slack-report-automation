@@ -36,8 +36,12 @@ jobs:
       run: |
         # 한국 시간 기준으로 날짜 확인
         KST_DAY=$(TZ='Asia/Seoul' date '+%d')
+        KST_DOW=$(TZ='Asia/Seoul' date '+%u')  # 1=Monday
         
-        if [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
+        echo "Current KST Day: $KST_DAY, Day of week: $KST_DOW"
+        
+        # 월요일이고 1-7일 사이인지 확인 (요일도 함께 체크)
+        if [ "$KST_DOW" = "1" ] && [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
           echo "is_first_monday=true" >> $GITHUB_OUTPUT
           echo "This is the first Monday - Monthly report day. Skipping weekly report."
         else

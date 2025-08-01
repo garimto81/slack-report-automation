@@ -1,0 +1,44 @@
+name: Weekly Report (Test)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  weekly-report-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Debug information
+      run: |
+        echo "=== Current date info ==="
+        echo "KST Date: $(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S')"
+        echo "KST Day of month: $(TZ='Asia/Seoul' date '+%d')"
+        echo "KST Day of week: $(TZ='Asia/Seoul' date '+%u')"
+        echo "=== Checking dist folder ==="
+        ls -la dist/src/ || echo "dist/src folder not found"
+    
+    - name: Generate weekly report (Force run)
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        echo "Generating weekly report (test mode)..."
+        node dist/src/generate-report.js --type weekly || echo "Failed to generate report"
