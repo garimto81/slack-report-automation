@@ -8,15 +8,17 @@ export class SlackService {
     this.client = new WebClient(token);
   }
 
-  async getChannelMessages(channelId: string, since: Date): Promise<ChannelMessage[]> {
+  async getChannelMessages(channelId: string, since: Date, until?: Date): Promise<ChannelMessage[]> {
     const messages: ChannelMessage[] = [];
     const oldest = Math.floor(since.getTime() / 1000).toString();
+    const latest = until ? Math.floor(until.getTime() / 1000).toString() : undefined;
 
     try {
       // 1. 메인 채널 메시지 가져오기
       const result = await this.client.conversations.history({
         channel: channelId,
         oldest: oldest,
+        latest: latest,
         limit: 1000
       });
 
