@@ -48,6 +48,7 @@ export class SlackService {
                 channel: channelId,
                 ts: msg.thread_ts,
                 oldest: oldest,  // 날짜 필터링 적용
+                latest: latest,  // 종료 날짜 필터링 적용
                 limit: 100      // 쓰레드당 최대 100개 답글
               });
 
@@ -59,8 +60,9 @@ export class SlackService {
                 for (const reply of replies) {
                   const replyTime = parseFloat(reply.ts || '0');
                   const sinceTime = since.getTime() / 1000;
+                  const untilTime = until ? until.getTime() / 1000 : Number.MAX_SAFE_INTEGER;
                   
-                  if (replyTime >= sinceTime) {
+                  if (replyTime >= sinceTime && replyTime <= untilTime) {
                     messages.push({
                       user: reply.user || 'unknown',
                       text: reply.text || '',

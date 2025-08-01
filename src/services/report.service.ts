@@ -60,7 +60,7 @@ export class ReportService {
     
     console.log(`Weekly report period: ${since.toISOString()} ~ ${until.toISOString()}`);
 
-    const messages = await this.slackService.getChannelMessages(channelId, since, until);
+    const messages = await this.slackService.getChannelMessages(channelId, since);
     console.log(`Found ${messages.length} messages in the last week`);
     
     const analysis = await this.geminiService.analyzeMessages(messages, 'weekly');
