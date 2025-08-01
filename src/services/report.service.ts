@@ -125,7 +125,7 @@ export class ReportService {
     }
 
     const report: Report = {
-      type: 'monthly-weekly',
+      type: 'monthly',
       channelId,
       analysis,
       sentTo: dmUserIds.join(','),
