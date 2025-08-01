@@ -56,8 +56,16 @@ jobs:
           fi
         fi
     
+    - name: Debug step outputs
+      run: |
+        echo "=== Debug Information ==="
+        echo "Event name: ${{ github.event_name }}"
+        echo "is_first_monday output: ${{ steps.check-first-monday.outputs.is_first_monday }}"
+        echo "Condition result: ${{ steps.check-first-monday.outputs.is_first_monday == 'false' }}"
+        echo "========================"
+    
     - name: Generate weekly report
-      if: steps.check-first-monday.outputs.is_first_monday == 'false'
+      if: github.event_name == 'workflow_dispatch' || steps.check-first-monday.outputs.is_first_monday == 'false'
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
