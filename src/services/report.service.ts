@@ -44,9 +44,16 @@ export class ReportService {
   }
 
   async generateWeeklyReport(channelId: string, dmUserIds: string[]): Promise<void> {
-    // 단순하게 7일 전부터 수집 (일간 보고서와 동일한 방식)
+    // 지난 주의 데이터 수집 (월간 보고서와 동일한 구조)
+    const now = new Date();
     const since = new Date();
     since.setDate(since.getDate() - 7);
+    since.setHours(0, 0, 0, 0);
+    
+    const until = new Date();
+    until.setHours(23, 59, 59, 999);
+    
+    console.log(`Weekly report period: ${since.toISOString()} ~ ${until.toISOString()}`);
 
     const messages = await this.slackService.getChannelMessages(channelId, since);
     console.log(`Found ${messages.length} messages in the last week`);
