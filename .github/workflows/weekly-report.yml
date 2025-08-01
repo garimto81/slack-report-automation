@@ -40,13 +40,20 @@ jobs:
         
         echo "Current KST Day: $KST_DAY, Day of week: $KST_DOW"
         
-        # 월요일이고 1-7일 사이인지 확인 (요일도 함께 체크)
-        if [ "$KST_DOW" = "1" ] && [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
-          echo "is_first_monday=true" >> $GITHUB_OUTPUT
-          echo "This is the first Monday - Monthly report day. Skipping weekly report."
-        else
+        # 수동 실행인 경우 첫째 월요일 체크 건너뛰기
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "is_first_monday=false" >> $GITHUB_OUTPUT
-          echo "This is not the first Monday - Running weekly report."
+          echo "Manual trigger - Running weekly report regardless of date."
+        else
+          # 스케줄 실행인 경우에만 첫째 월요일 체크
+          # 월요일이고 1-7일 사이인지 확인 (요일도 함께 체크)
+          if [ "$KST_DOW" = "1" ] && [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
+            echo "is_first_monday=true" >> $GITHUB_OUTPUT
+            echo "This is the first Monday - Monthly report day. Skipping weekly report."
+          else
+            echo "is_first_monday=false" >> $GITHUB_OUTPUT
+            echo "This is not the first Monday - Running weekly report."
+          fi
         fi
     
     - name: Generate weekly report
