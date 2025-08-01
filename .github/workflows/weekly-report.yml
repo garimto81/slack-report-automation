@@ -31,41 +31,12 @@ jobs:
     - name: Build project
       run: npm run build
     
-    - name: Check if first Monday (skip if monthly report day)
-      id: check-first-monday
+    - name: Log execution time
       run: |
-        # 한국 시간 기준으로 날짜 확인
-        KST_DAY=$(TZ='Asia/Seoul' date '+%d')
-        KST_DOW=$(TZ='Asia/Seoul' date '+%u')  # 1=Monday
-        
-        echo "Current KST Day: $KST_DAY, Day of week: $KST_DOW"
-        
-        # 수동 실행인 경우 첫째 월요일 체크 건너뛰기
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-          echo "is_first_monday=false" >> $GITHUB_OUTPUT
-          echo "Manual trigger - Running weekly report regardless of date."
-        else
-          # 스케줄 실행인 경우에만 첫째 월요일 체크
-          # 월요일이고 1-7일 사이인지 확인 (요일도 함께 체크)
-          if [ "$KST_DOW" = "1" ] && [ "$KST_DAY" -ge "1" ] && [ "$KST_DAY" -le "7" ]; then
-            echo "is_first_monday=true" >> $GITHUB_OUTPUT
-            echo "This is the first Monday - Monthly report day. Skipping weekly report."
-          else
-            echo "is_first_monday=false" >> $GITHUB_OUTPUT
-            echo "This is not the first Monday - Running weekly report."
-          fi
-        fi
-    
-    - name: Debug step outputs
-      run: |
-        echo "=== Debug Information ==="
-        echo "Event name: ${{ github.event_name }}"
-        echo "is_first_monday output: ${{ steps.check-first-monday.outputs.is_first_monday }}"
-        echo "Condition result: ${{ steps.check-first-monday.outputs.is_first_monday == 'false' }}"
-        echo "========================"
+        KST_TIME=$(TZ='Asia/Seoul' date '+%Y-%m-%d %H:%M:%S')
+        echo "Running weekly report at: $KST_TIME KST"
     
     - name: Generate weekly report
-      if: github.event_name == 'workflow_dispatch' || steps.check-first-monday.outputs.is_first_monday == 'false'
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
