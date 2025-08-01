@@ -228,7 +228,7 @@ export class ReportService {
     const lastWeek = new Date(now);
     lastWeek.setDate(lastWeek.getDate() - 7);
     
-    let report = `*월간 업무 보고 (주간 기간)*\n`;
+    let report = `*주간 업무 보고*\n`;
     report += `_대상 기간: ${lastWeek.getMonth() + 1}월 ${lastWeek.getDate()}일 ~ ${now.getMonth() + 1}월 ${now.getDate()}일_\n\n`;
     
     if (analysis.insights?.actionItems && analysis.insights.actionItems.length > 0) {
