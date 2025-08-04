@@ -20,6 +20,10 @@ google-credentials.json
 .idea/
 .vscode/
 
+# Organized folders (can be removed from git tracking if needed)
+test-scripts/
+docs-md/
+
 # Submodules
 /SuperClaude/
 /claudia/

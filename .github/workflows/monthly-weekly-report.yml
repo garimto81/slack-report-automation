@@ -1,8 +1,8 @@
-name: Monthly Weekly Report
+name: Monthly-Weekly Report
 
 on:
   schedule:
-    - cron: '0 2 * * 1'  # 매주 월요일 11:00 AM KST (UTC+9)
+    - cron: '0 1 * * 1'  # 매주 월요일 10:00 AM KST (UTC+9)
   workflow_dispatch:
 
 jobs:
@@ -25,7 +25,18 @@ jobs:
     - name: Build project
       run: npm run build
       
+    - name: Check if first Monday of month
+      id: check-first-monday
+      run: |
+        current_date=$(date +%d)
+        if [ $current_date -le 7 ]; then
+          echo "is_first_monday=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_first_monday=false" >> $GITHUB_OUTPUT
+        fi
+      
     - name: Generate monthly-weekly report
+      if: steps.check-first-monday.outputs.is_first_monday == 'false'
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -33,4 +44,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      run: node dist/src/generate-report.js monthly-weekly
+      run: node dist/generate-report.js monthly-weekly

@@ -1,0 +1,87 @@
+name: Slack Reports
+
+on:
+  schedule:
+    # 일일 보고서: 화-금 10:00 AM KST
+    - cron: '0 1 * * 2-5'
+    # monthly-weekly 보고서: 월요일 10:00 AM KST
+    - cron: '0 1 * * 1'
+    # 주간 보고서: 월요일 10:10 AM KST
+    - cron: '10 1 * * 1'
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Report type to generate'
+        required: true
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+          - monthly
+          - monthly-weekly
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Determine report type
+      id: report-type
+      run: |
+        # 수동 실행 시 입력값 사용
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "type=${{ github.event.inputs.report_type }}" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # 스케줄 실행 시
+        day_of_week=$(date +%u)  # 1=월요일, 5=금요일
+        day_of_month=$(date +%d)
+        hour=$(date +%H)
+        minute=$(date +%M)
+        
+        # 월요일인 경우
+        if [ $day_of_week -eq 1 ]; then
+          # 첫째 주 월요일 (1-7일)
+          if [ $day_of_month -le 7 ]; then
+            echo "type=monthly" >> $GITHUB_OUTPUT
+          else
+            # UTC 01:00 = monthly-weekly, UTC 01:10 = weekly
+            if [ "$hour" = "01" ] && [ "$minute" -lt "10" ]; then
+              echo "type=monthly-weekly" >> $GITHUB_OUTPUT
+            else
+              echo "type=weekly" >> $GITHUB_OUTPUT
+            fi
+          fi
+        else
+          # 화-금요일
+          echo "type=daily" >> $GITHUB_OUTPUT
+        fi
+      
+    - name: Generate report
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+        SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      run: |
+        echo "Generating ${{ steps.report-type.outputs.type }} report..."
+        node dist/generate-report.js ${{ steps.report-type.outputs.type }}
