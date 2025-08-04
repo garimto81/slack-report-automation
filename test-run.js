@@ -7,7 +7,7 @@ async function testRun() {
   try {
     // 1. Firebase 연결 테스트
     console.log('1. Firebase 연결 테스트...');
-    const firebaseFetcher = new FirebaseDataFetcher();
+    const firebaseFetcher = FirebaseDataFetcher.getInstance();
     const tasks = await firebaseFetcher.fetchCameraTasks();
     
     if (tasks.length > 0) {

@@ -1,4 +1,4 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { Task } from '../types';
@@ -15,19 +15,38 @@ const firebaseConfig = {
 };
 
 export class FirebaseDataFetcher {
+  private static instance: FirebaseDataFetcher;
+  private static isInitialized = false;
+  private static cachedTasks: { data: Task[], timestamp: number } | null = null;
+  private static CACHE_DURATION = 5 * 60 * 1000; // 5분 캐시
+  
   private db: any;
   private auth: any;
   
   constructor() {
-    const app = initializeApp(firebaseConfig);
+    // Firebase 앱이 이미 초기화되었는지 확인
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     this.db = getFirestore(app);
     this.auth = getAuth(app);
   }
   
+  static getInstance(): FirebaseDataFetcher {
+    if (!FirebaseDataFetcher.instance) {
+      FirebaseDataFetcher.instance = new FirebaseDataFetcher();
+    }
+    return FirebaseDataFetcher.instance;
+  }
+  
   async initialize(): Promise<void> {
+    if (FirebaseDataFetcher.isInitialized) {
+      return; // 이미 인증됨
+    }
+    
     try {
+      const startTime = Date.now();
       await signInAnonymously(this.auth);
-      console.log('Authenticated with Firebase anonymously');
+      FirebaseDataFetcher.isInitialized = true;
+      console.log(`Firebase auth completed in ${Date.now() - startTime}ms`);
     } catch (error) {
       console.error('Firebase authentication error:', error);
     }
@@ -35,12 +54,20 @@ export class FirebaseDataFetcher {
   
   async fetchCameraTasks(): Promise<Task[]> {
     try {
+      // 캐시 확인
+      if (FirebaseDataFetcher.cachedTasks && 
+          Date.now() - FirebaseDataFetcher.cachedTasks.timestamp < FirebaseDataFetcher.CACHE_DURATION) {
+        console.log('Using cached Firebase data');
+        return FirebaseDataFetcher.cachedTasks.data;
+      }
+      
       // Ensure authentication before fetching
       await this.initialize();
       
+      const startTime = Date.now();
       console.log('Fetching tasks from Firebase...');
       
-      // Fetch all tasks from Firebase
+      // Fetch only Aiden Kim's tasks
       const tasksCollection = collection(this.db, 'tasks');
       const tasksSnapshot = await getDocs(tasksCollection);
       
@@ -82,7 +109,15 @@ export class FirebaseDataFetcher {
         }
       });
       
+      console.log(`Firebase fetch completed in ${Date.now() - startTime}ms`);
       console.log(`Found ${allTasks.length} camera tasks in Firebase`);
+      
+      // 캐시 저장
+      FirebaseDataFetcher.cachedTasks = {
+        data: allTasks,
+        timestamp: Date.now()
+      };
+      
       return allTasks;
     } catch (error) {
       console.error('Error fetching from Firebase:', error);

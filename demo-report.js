@@ -8,7 +8,7 @@ async function generateDemoReport() {
   console.log('\n=====================================\n');
   
   try {
-    const firebaseFetcher = new FirebaseDataFetcher();
+    const firebaseFetcher = FirebaseDataFetcher.getInstance();
     const tasks = await firebaseFetcher.fetchCameraTasks();
     
     console.log(`총 ${tasks.length}개의 업무가 있습니다.\n`);

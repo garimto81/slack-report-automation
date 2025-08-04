@@ -24,12 +24,13 @@ jobs:
       run: npm run build
     
     - name: Test Firebase connection
+      timeout-minutes: 5
       run: |
         echo "Testing Firebase connection..."
         node -e "
         const { FirebaseDataFetcher } = require('./dist/services/firebaseDataFetcher');
         (async () => {
-          const fetcher = new FirebaseDataFetcher();
+          const fetcher = FirebaseDataFetcher.getInstance();
           const tasks = await fetcher.fetchCameraTasks();
           console.log('✅ Firebase 연결 성공: ' + tasks.length + '개 업무 발견');
         })().catch(err => {
@@ -67,14 +68,18 @@ jobs:
         fi
     
     - name: Run full test
+      timeout-minutes: 10
       env:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
         GOOGLE_DOC_ID: 1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow
         TZ: Asia/Seoul
       run: |
-        echo "Running full system test..."
-        npm start -- --run-once
+        echo "Running full system test with 10-minute timeout..."
+        timeout 600s npm start -- --run-once || {
+          echo "❌ 테스트가 10분을 초과하여 중단됨"
+          exit 1
+        }
     
     - name: Report results
       if: always()

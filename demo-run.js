@@ -4,7 +4,7 @@ async function demoRun() {
   console.log('=== 카메라 파트 업무 데모 실행 ===\n');
   
   try {
-    const firebaseFetcher = new FirebaseDataFetcher();
+    const firebaseFetcher = FirebaseDataFetcher.getInstance();
     const tasks = await firebaseFetcher.fetchCameraTasks();
     
     console.log(`✅ Firebase에서 ${tasks.length}개의 카메라 파트 업무를 찾았습니다.\n`);

@@ -1,35 +1,38 @@
 import { FirebaseDataFetcher } from './firebaseDataFetcher';
 import { GitHubDataFetcher } from './githubDataFetcher';
 import { GeminiAnalyzer } from './geminiAnalyzer';
-import { GoogleDocsWriter } from './googleDocsWriter';
+import { GoogleDocsWriterV2 } from './googleDocsWriterV2';
 import { Task } from '../types';
 
 export class ReportGenerator {
   private firebaseFetcher: FirebaseDataFetcher;
   private githubFetcher: GitHubDataFetcher;
   private geminiAnalyzer: GeminiAnalyzer;
-  private docsWriter: GoogleDocsWriter;
+  private docsWriter: GoogleDocsWriterV2;
   
   constructor() {
-    this.firebaseFetcher = new FirebaseDataFetcher();
+    this.firebaseFetcher = FirebaseDataFetcher.getInstance();
     this.githubFetcher = new GitHubDataFetcher();
     this.geminiAnalyzer = new GeminiAnalyzer();
-    this.docsWriter = new GoogleDocsWriter();
+    this.docsWriter = new GoogleDocsWriterV2();
   }
   
   async generateReport(): Promise<boolean> {
     try {
       console.log('Starting report generation...');
       
-      console.log('1. Fetching tasks from Firebase...');
-      const firebaseTasks = await this.firebaseFetcher.fetchCameraTasks();
+      console.log('1. Fetching tasks from Firebase and GitHub in parallel...');
       
-      console.log('2. Fetching tasks from GitHub...');
-      const githubTasks = await this.githubFetcher.fetchRecentActivities();
+      // 병렬 처리로 시간 단축
+      const [firebaseTasks, githubTasks] = await Promise.all([
+        this.firebaseFetcher.fetchCameraTasks(),
+        this.githubFetcher.fetchRecentActivities().catch(err => {
+          console.log('GitHub fetch failed:', err.message);
+          return [];
+        })
+      ]);
       
-      if (githubTasks.length === 0) {
-        console.log('No GitHub tasks found (repository may not exist or be private)');
-      }
+      console.log(`Firebase: ${firebaseTasks.length} tasks, GitHub: ${githubTasks.length} tasks`);
       
       const allTasks = this.mergeTasks(firebaseTasks, githubTasks);
       console.log(`Found ${allTasks.length} total camera tasks`);
@@ -39,10 +42,10 @@ export class ReportGenerator {
         return false;
       }
       
-      console.log('3. Analyzing task priorities with Gemini AI...');
+      console.log('2. Analyzing task priorities with Gemini AI...');
       const prioritizedTasks = await this.geminiAnalyzer.prioritizeTasks(allTasks);
       
-      console.log('4. Writing report to Google Docs...');
+      console.log('3. Writing report to Google Docs...');
       const success = await this.docsWriter.writeReport(prioritizedTasks);
       
       if (success) {
