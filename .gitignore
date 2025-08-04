@@ -1,0 +1,34 @@
+# Node.js / Build
+node_modules/
+dist/
+coverage/
+.cache/
+
+# Credentials & Tokens
+.env
+.env.local
+.env.production
+credentials.json
+token.json
+google-credentials.json
+
+# Logs
+*.log
+
+# OS / Editor specific
+.DS_Store
+.idea/
+.vscode/
+
+# Organized folders (can be removed from git tracking if needed)
+test-scripts/
+docs-md/
+
+# Submodules
+/SuperClaude/
+/claudia/
+
+# Vim swap files
+*.swp
+*.swo
+*~
