@@ -1,0 +1,30 @@
+# Node.js / Build
+node_modules/
+dist/
+coverage/
+.cache/
+
+# Credentials & Tokens
+.env
+.env.local
+.env.production
+credentials.json
+token.json
+google-credentials.json
+
+# Logs
+*.log
+
+# OS / Editor specific
+.DS_Store
+.idea/
+.vscode/
+
+# Submodules
+/SuperClaude/
+/claudia/
+
+# Vim swap files
+*.swp
+*.swo
+*~
