@@ -265,7 +265,10 @@ export class GoogleDocsWriterV2 {
     const table = tableInfo.tableElement;
     const tableRows = table.tableRows;
     
-    console.log(`\n🔍 Searching for '카메라 Aiden Kim' in ${tableRows.length} rows...`);
+    console.log(`\n🔍 Searching for camera part in ${tableRows.length} rows...`);
+    
+    // 먼저 "카메라" 행을 찾기
+    let cameraRowIndex = -1;
     
     for (let rowIndex = 0; rowIndex < tableRows.length; rowIndex++) {
       const row = tableRows[rowIndex];
@@ -276,7 +279,60 @@ export class GoogleDocsWriterV2 {
         
         console.log(`Row ${rowIndex}: "${cellText.trim()}"`);
         
-        // 다양한 형식 매칭
+        // "카메라" 텍스트를 찾으면
+        if (cellText.trim() === '카메라' || cellText.includes('카메라')) {
+          console.log(`✅ Found '카메라' at row ${rowIndex}`);
+          cameraRowIndex = rowIndex;
+          
+          // 다음 행들을 확인하여 Aiden Kim 찾기
+          for (let nextRow = rowIndex + 1; nextRow < Math.min(rowIndex + 5, tableRows.length); nextRow++) {
+            const checkRow = tableRows[nextRow];
+            if (checkRow.tableCells && checkRow.tableCells.length > 0) {
+              const nextCellText = this.getTextFromTableCell(checkRow.tableCells[0]);
+              console.log(`  Checking row ${nextRow}: "${nextCellText.trim()}"`);
+              
+              if (nextCellText.includes('Aiden') || nextCellText.includes('에이든')) {
+                console.log(`✅ Found Aiden Kim at row ${nextRow}`);
+                return {
+                  tableIndex: tableInfo.index,
+                  rowIndex: nextRow,
+                  row: checkRow,
+                  cells: checkRow.tableCells,
+                  cellIndexes: this.getCellIndexes(checkRow.tableCells)
+                };
+              }
+              
+              // 빈 행이 아니고 다른 파트가 시작되면 중단
+              if (nextCellText.trim() && !nextCellText.includes('Aiden') && !nextCellText.includes('에이든')) {
+                break;
+              }
+            }
+          }
+          
+          // Aiden Kim을 찾지 못했지만 카메라 행은 찾았으므로
+          // 카메라 행 다음의 첫 번째 빈 행을 사용
+          for (let nextRow = rowIndex + 1; nextRow < Math.min(rowIndex + 5, tableRows.length); nextRow++) {
+            const checkRow = tableRows[nextRow];
+            if (checkRow.tableCells && checkRow.tableCells.length > 0) {
+              const nextCellText = this.getTextFromTableCell(checkRow.tableCells[0]);
+              
+              // 빈 행을 찾으면
+              if (!nextCellText.trim()) {
+                console.log(`✅ Using empty row ${nextRow} for camera part`);
+                return {
+                  tableIndex: tableInfo.index,
+                  rowIndex: nextRow,
+                  row: checkRow,
+                  cells: checkRow.tableCells,
+                  cellIndexes: this.getCellIndexes(checkRow.tableCells),
+                  isEmptyRow: true
+                };
+              }
+            }
+          }
+        }
+        
+        // 기존 로직도 유지 (카메라 Aiden Kim이 한 셀에 있는 경우)
         if ((cellText.includes('카메라') && cellText.includes('Aiden')) ||
             (cellText.includes('Camera') && cellText.includes('Aiden')) ||
             cellText.includes('카메라 Aiden Kim')) {
@@ -309,6 +365,19 @@ export class GoogleDocsWriterV2 {
   
   private prepareBatchUpdate(location: any, tasks: PrioritizedTask[]): any[] {
     const requests: any[] = [];
+    
+    // 빈 행인 경우 첫 번째 셀에 "Aiden Kim" 추가
+    if (location.isEmptyRow && location.cells.length > 0) {
+      const firstCell = location.cells[0];
+      if (firstCell.content && firstCell.content.length > 0) {
+        requests.push({
+          insertText: {
+            location: { index: firstCell.content[0].startIndex + 1 },
+            text: "Aiden Kim"
+          }
+        });
+      }
+    }
     
     // 기존 데이터 삭제 (두 번째 셀부터)
     for (let cellIndex = 1; cellIndex < location.cells.length && cellIndex < 4; cellIndex++) {
