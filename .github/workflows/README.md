@@ -2,94 +2,147 @@
 
 ## 🎯 카메라 파트 자동 보고 시스템 워크플로우
 
-### 1. daily-camera-report.yml (✅ 사용)
+이 프로젝트는 카메라 파트의 업무를 자동으로 수집, 분석하여 Google Docs에 보고하는 시스템입니다.
+
+## 📂 워크플로우 목록
+
+### 1. daily-camera-report.yml (⭐ 메인 워크플로우)
 - **목적**: 매일 오전 10시 카메라 파트 보고서 자동 생성
-- **실행**: 
-  - 자동: 매일 KST 10:00 AM
-  - 수동: Actions 탭에서 수동 실행 가능
-- **기능**: Firebase → Gemini AI → Google Docs 자동 보고
+- **실행 시간**: 
+  - 자동: 매일 KST 10:00 AM (UTC 01:00)
+  - 수동: Actions 탭에서 "Run workflow" 클릭
+- **동작 과정**:
+  1. Firebase에서 카메라 파트 업무 수집
+  2. Gemini AI로 우선순위 분석
+  3. Google Docs에 보고서 작성
+- **예상 소요 시간**: 5-7분
 
-### 2. retry-camera-report.yml (✅ 사용)
+### 2. retry-camera-report.yml (자동 재시도)
 - **목적**: daily-camera-report 실패 시 자동 재시도
-- **실행**: 자동으로 실패 감지 후 1시간 대기 후 재시도
-- **기능**: 최대 24회 재시도 (24시간)
+- **실행**: 
+  - 자동: daily-camera-report 실패 감지 시
+  - 1시간 대기 후 재실행
+- **최대 재시도**: 24회 (24시간)
 
-### 3. test-run.yml (✅ 사용)
-- **목적**: 전체 시스템 테스트
+### 3. test-run.yml (전체 테스트)
+- **목적**: 전체 시스템 통합 테스트
 - **실행**: 수동 실행 전용
-- **기능**: Firebase, Gemini, Google Docs 전체 연동 테스트
+- **테스트 항목**:
+  - Firebase 연결 및 데이터 수집
+  - Gemini AI 우선순위 분석
+  - Google Docs 문서 작성
+- **예상 소요 시간**: 8-12분
+- **타임아웃**: 10분
 
-### 4. quick-test.yml (✅ 사용)
-- **목적**: 빠른 연결 테스트 (3분 이내)
+### 4. quick-test.yml (빠른 테스트)
+- **목적**: 빠른 연결 상태 확인
 - **실행**: 수동 실행 전용
-- **기능**: Firebase 연결, API 키 검증
-
-## ⚠️ 사용하지 않는 워크플로우 (Slack 시스템용)
-
-### ❌ daily-report.yml
-- Slack/Supabase 시스템용 (카메라 시스템과 무관)
-- **대신 사용**: daily-camera-report.yml
-
-### ❌ weekly-report.yml
-- Slack 주간 보고서용
-
-### ❌ monthly-report.yml  
-- Slack 월간 보고서용
-
-### ❌ monthly-weekly-report.yml
-- Slack 복합 보고서용
-
-### ❌ retry-on-failure.yml
-- Slack 시스템 재시도용
-- **대신 사용**: retry-camera-report.yml
+- **테스트 항목**:
+  - Firebase 연결 (데이터 수집)
+  - API 키 유효성 검증
+  - GitHub 리포지토리 접근
+- **예상 소요 시간**: 1-3분
 
 ## 🚀 사용 방법
 
-### 1. 일일 자동 보고서 활성화
-```yaml
-# daily-camera-report.yml이 자동으로 매일 오전 10시 실행됩니다
-# GitHub Secrets 설정 필요:
-# - GEMINI_API_KEY
-# - GOOGLE_SERVICE_ACCOUNT_KEY
-```
+### 1. 필수 설정 (GitHub Secrets)
 
-### 2. 수동 테스트 실행
-1. GitHub 리포지토리의 Actions 탭 이동
-2. 왼쪽 메뉴에서 워크플로우 선택:
-   - `Quick Test`: 빠른 연결 확인
-   - `Test Run`: 전체 시스템 테스트
-3. "Run workflow" 버튼 클릭
+Repository Settings → Secrets and variables → Actions에서 설정:
+
+| Secret 이름 | 설명 | 예시 |
+|------------|------|------|
+| GEMINI_API_KEY | Google AI Studio에서 발급받은 API 키 | AIza... |
+| GOOGLE_SERVICE_ACCOUNT_KEY | Google Cloud 서비스 계정 JSON 전체 | {"type":"service_account",...} |
+
+### 2. 워크플로우 실행
+
+#### 자동 실행 (Daily Report)
+- 설정 후 매일 오전 10시 자동 실행
+- 실패 시 1시간마다 자동 재시도
+
+#### 수동 실행
+1. GitHub 리포지토리의 **Actions** 탭 이동
+2. 왼쪽 메뉴에서 원하는 워크플로우 선택
+3. **Run workflow** 버튼 클릭
+4. 브랜치 선택 (기본: main)
+5. **Run workflow** 클릭
 
 ### 3. 실행 결과 확인
-- Actions 탭에서 실행 기록 확인
-- 성공 시 Google Docs 문서에서 결과 확인
-- 실패 시 로그 확인 후 문제 해결
 
-## 📝 주의사항
+#### 성공 시
+- ✅ 녹색 체크 표시
+- Google Docs 문서에서 결과 확인
+- 로그에서 상세 정보 확인
 
-1. **GitHub Secrets 설정 필수**
-   - Repository Settings → Secrets and variables → Actions
-   - GEMINI_API_KEY, GOOGLE_SERVICE_ACCOUNT_KEY 추가
+#### 실패 시
+- ❌ 빨간색 X 표시
+- 클릭하여 상세 로그 확인
+- 자동 재시도 대기 중
 
-2. **Google Docs 문서 구조**
-   - YYMMDD 형식의 탭 필요 (예: 250804)
-   - "카메라 Aiden Kim" 행이 있는 표 필요
+## 📊 Google Docs 문서 구조
 
-3. **타임존**
-   - 모든 시간은 한국 시간(KST) 기준
-   - UTC로 설정되어 있으나 내부적으로 KST 변환
+보고서가 작성될 문서는 다음 구조를 따라야 합니다:
 
-## 🔧 문제 해결
+```
+문서 ID: 1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow
 
-### 워크플로우 실행 안 됨
-1. Actions가 활성화되어 있는지 확인
-2. 기본 브랜치가 main인지 확인
-3. workflow 파일이 .github/workflows/에 있는지 확인
+탭 이름: YYMMDD (예: 250804 = 2025년 8월 4일)
 
-### API 키 오류
-1. Secrets에 올바른 값이 설정되어 있는지 확인
-2. JSON 형식이 올바른지 확인 (GOOGLE_SERVICE_ACCOUNT_KEY)
+표 구조:
+┌─────────────────┬──────────────────┬─────────────────┬──────────┐
+│ 파트            │ 진행 중인 업무   │ 핵심 내용      │ 진행사항 │
+├─────────────────┼──────────────────┼─────────────────┼──────────┤
+│ 카메라 Aiden Kim│ (자동 입력)      │ (자동 입력)     │ (자동)   │
+└─────────────────┴──────────────────┴─────────────────┴──────────┘
+```
 
-### 문서 쓰기 실패
-1. 서비스 계정에 문서 편집 권한이 있는지 확인
-2. 날짜 탭과 표 구조가 올바른지 확인
+## 🐛 문제 해결
+
+### 1. 워크플로우가 실행되지 않음
+- Actions가 활성화되어 있는지 확인
+- 기본 브랜치가 main인지 확인
+- cron 표현식이 올바른지 확인
+
+### 2. Firebase 연결 실패
+- Firebase 프로젝트 설정 확인
+- 익명 인증 활성화 여부 확인
+- Firestore 보안 규칙 확인
+
+### 3. Google Docs 쓰기 실패
+- 서비스 계정 이메일에 문서 편집 권한 부여
+- 날짜 탭(YYMMDD) 존재 확인
+- "카메라 Aiden Kim" 행이 있는 표 확인
+
+### 4. API 키 오류
+- Secrets에 올바른 값 설정 확인
+- JSON 형식 유효성 확인 (서비스 계정 키)
+- API 키에 불필요한 공백이나 줄바꿈 없는지 확인
+
+## 📈 모니터링
+
+### 실행 기록 확인
+1. Actions 탭에서 워크플로우 선택
+2. 실행 기록 목록에서 특정 실행 클릭
+3. 각 단계별 로그 확인
+
+### 실행 통계
+- 평균 실행 시간: 5-7분
+- 성공률 모니터링
+- 실패 패턴 분석
+
+## 💡 팁
+
+1. **테스트 우선**: 새로운 설정 후 quick-test.yml로 먼저 확인
+2. **로그 확인**: 실패 시 상세 로그에서 구체적인 오류 메시지 확인
+3. **시간대 주의**: 모든 시간은 KST 기준 (UTC+9)
+4. **문서 준비**: Google Docs에 미리 날짜 탭과 표 구조 생성
+
+## 🔒 보안 주의사항
+
+- API 키를 코드에 직접 포함하지 마세요
+- Secrets는 절대 로그에 출력하지 마세요
+- 서비스 계정 키는 최소 권한 원칙 적용
+
+---
+
+문제가 발생하면 [Issues](https://github.com/garimto81/ggp-report/issues)에 등록해주세요.
