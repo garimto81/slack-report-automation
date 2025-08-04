@@ -4,8 +4,10 @@ on:
   schedule:
     # 일일 보고서: 화-금 10:00 AM KST
     - cron: '0 1 * * 2-5'
-    # 주간/월간 보고서: 월요일 10:00 AM KST
+    # monthly-weekly 보고서: 월요일 10:00 AM KST
     - cron: '0 1 * * 1'
+    # 주간 보고서: 월요일 10:10 AM KST
+    - cron: '10 1 * * 1'
   workflow_dispatch:
     inputs:
       report_type:
@@ -17,6 +19,7 @@ on:
           - daily
           - weekly
           - monthly
+          - monthly-weekly
 
 jobs:
   generate-report:
@@ -50,6 +53,8 @@ jobs:
         # 스케줄 실행 시
         day_of_week=$(date +%u)  # 1=월요일, 5=금요일
         day_of_month=$(date +%d)
+        hour=$(date +%H)
+        minute=$(date +%M)
         
         # 월요일인 경우
         if [ $day_of_week -eq 1 ]; then
@@ -57,7 +62,12 @@ jobs:
           if [ $day_of_month -le 7 ]; then
             echo "type=monthly" >> $GITHUB_OUTPUT
           else
-            echo "type=weekly" >> $GITHUB_OUTPUT
+            # UTC 01:00 = monthly-weekly, UTC 01:10 = weekly
+            if [ "$hour" = "01" ] && [ "$minute" -lt "10" ]; then
+              echo "type=monthly-weekly" >> $GITHUB_OUTPUT
+            else
+              echo "type=weekly" >> $GITHUB_OUTPUT
+            fi
           fi
         else
           # 화-금요일

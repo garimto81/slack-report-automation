@@ -1,12 +1,12 @@
-name: Weekly Report
+name: Monthly-Weekly Report
 
 on:
   schedule:
-    - cron: '10 1 * * 1'  # 매주 월요일 10:10 AM KST (UTC+9)
+    - cron: '0 1 * * 1'  # 매주 월요일 10:00 AM KST (UTC+9)
   workflow_dispatch:
 
 jobs:
-  weekly-report:
+  monthly-weekly-report:
     runs-on: ubuntu-latest
     
     steps:
@@ -35,7 +35,7 @@ jobs:
           echo "is_first_monday=false" >> $GITHUB_OUTPUT
         fi
       
-    - name: Generate weekly report
+    - name: Generate monthly-weekly report
       if: steps.check-first-monday.outputs.is_first_monday == 'false'
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -44,4 +44,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      run: node dist/generate-report.js weekly
+      run: node dist/generate-report.js monthly-weekly

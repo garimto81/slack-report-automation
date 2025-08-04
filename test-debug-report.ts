@@ -51,15 +51,8 @@ async function debugReport() {
         console.log(`  ${i + 1}. ${msg.user}: ${text}...${threadInfo}`);
       });
       
-      // 전체 메시지 중 카메라 관련 메시지 수 확인
-      const cameraMessages = messages.filter(msg => {
-        const text = msg.text.toLowerCase();
-        return text.includes('촬영') || text.includes('카메라') || 
-               text.includes('드론') || text.includes('영상') || 
-               text.includes('편집') || text.includes('렌즈') || 
-               text.includes('장비');
-      });
-      console.log(`\n- 카메라 관련 메시지 수: ${cameraMessages.length}개 / 전체 ${messages.length}개`);
+      console.log(`\n- 전체 메시지 수: ${messages.length}개`);
+      console.log('- 참고: AI가 전체 문맥을 분석하여 카메라 파트 업무 추론');
       
       // AI 분석
       console.log('\n5. Gemini AI 분석 중...');
@@ -84,41 +77,21 @@ async function debugReport() {
         console.log('\n❓ 가능한 원인:');
         console.log('  1. 카메라 파트 관련 메시지가 없음');
         console.log('  2. AI가 카메라 업무로 인식하지 못함');
-        console.log('  3. 메시지 형식이 업무로 분류되지 않음');
+        console.log('  3. 메시지가 일상 대화로 분류됨');
+        console.log('  4. AI 프롬프트가 너무 엄격함');
       }
       
-      // 카메라 관련 키워드 확인
-      console.log('\n8. 카메라 관련 키워드 검색:');
-      const cameraKeywords = ['촬영', '카메라', '드론', '영상', '편집', '렌즈', '장비'];
-      const foundKeywords = new Set<string>();
-      const keywordCount: Record<string, number> = {};
-      
-      messages.forEach(msg => {
-        cameraKeywords.forEach(keyword => {
-          if (msg.text.includes(keyword)) {
-            foundKeywords.add(keyword);
-            keywordCount[keyword] = (keywordCount[keyword] || 0) + 1;
-          }
-        });
-      });
-      
-      console.log('- 발견된 키워드:', Array.from(foundKeywords).join(', ') || '없음');
-      console.log('- 키워드별 빈도:');
-      Object.entries(keywordCount).forEach(([keyword, count]) => {
-        console.log(`    ${keyword}: ${count}회`);
-      });
-      
-      // 카메라 관련 메시지 샘플 출력
-      if (cameraMessages.length > 0) {
-        console.log('\n9. 카메라 관련 메시지 샘플 (최대 3개):');
-        cameraMessages.slice(0, 3).forEach((msg, i) => {
-          const text = msg.text.substring(0, 150).replace(/\n/g, ' ');
-          console.log(`  ${i + 1}. ${msg.user}: ${text}`);
-        });
-      }
+      // AI 추론 능력 설명
+      console.log('\n8. AI 분석 방식:');
+      console.log('- 단순 키워드 매칭이 아닌 문맥 기반 추론');
+      console.log('- 전체 대화 흐름과 맥락을 이해');
+      console.log('- 카메라 파트 업무 여부를 AI가 판단');
+      console.log('\n예시:');
+      console.log('- "내일 회의" → 카메라 업무 아님');
+      console.log('- "내일 팍스타워 4K 준비" → 카메라 업무로 추론 가능');
       
       // JSON 파싱 테스트
-      console.log('\n10. AI 응답 원본 확인:');
+      console.log('\n9. AI 응답 원본 확인:');
       try {
         const testAnalysis = await geminiService.analyzeMessages(messages.slice(0, 10), 'daily');
         console.log('- AI 응답 타입:', typeof testAnalysis);

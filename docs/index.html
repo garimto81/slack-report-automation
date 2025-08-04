@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slack Report Automation - AI 기반 업무 보고서 자동화</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 헤더 -->
+    <header>
+        <nav>
+            <div class="container">
+                <div class="logo">
+                    <i class="fab fa-slack"></i>
+                    <span>Slack Report Automation</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#features">주요 기능</a></li>
+                    <li><a href="#how-it-works">작동 방식</a></li>
+                    <li><a href="#reports">보고서 종류</a></li>
+                    <li><a href="#schedule">실행 스케줄</a></li>
+                    <li><a href="https://github.com/garimto81/slack-report-automation" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 히어로 섹션 -->
+    <section class="hero">
+        <div class="container">
+            <h1>AI가 분석하는 슬랙 업무 보고서</h1>
+            <p class="subtitle">매일 아침, 카메라 파트의 업무를 자동으로 분석하고 정리해드립니다</p>
+            <div class="hero-features">
+                <div class="feature-item">
+                    <i class="fas fa-robot"></i>
+                    <span>Gemini AI 분석</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-clock"></i>
+                    <span>자동 스케줄링</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-users"></i>
+                    <span>다중 사용자 지원</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 주요 기능 -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2>주요 기능</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>AI 기반 업무 추론</h3>
+                    <p>단순 키워드 매칭이 아닌, Gemini AI가 전체 대화의 맥락을 이해하고 카메라 파트 업무를 추론합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3>쓰레드 분석</h3>
+                    <p>메인 메시지뿐만 아니라 쓰레드의 모든 답글까지 포함하여 완전한 대화 컨텍스트를 분석합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <h3>자동 DM 전송</h3>
+                    <p>분석된 보고서를 여러 담당자에게 동시에 Slack DM으로 자동 전송합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h3>히스토리 관리</h3>
+                    <p>모든 보고서는 Supabase에 저장되어 추후 조회 및 분석이 가능합니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 작동 방식 -->
+    <section id="how-it-works" class="how-it-works">
+        <div class="container">
+            <h2>작동 방식</h2>
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <h3>메시지 수집</h3>
+                    <p>Slack API를 통해 채널의 메시지와 쓰레드를 수집합니다.</p>
+                </div>
+                <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <h3>AI 분석</h3>
+                    <p>Gemini AI가 문맥을 파악하여 카메라 파트 업무를 추론합니다.</p>
+                </div>
+                <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <h3>보고서 생성</h3>
+                    <p>6하 원칙에 따라 업무를 정리하고 우선순위를 지정합니다.</p>
+                </div>
+                <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <h3>DM 전송</h3>
+                    <p>완성된 보고서를 담당자들에게 자동으로 전송합니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 보고서 종류 -->
+    <section id="reports" class="reports">
+        <div class="container">
+            <h2>보고서 종류</h2>
+            <div class="report-types">
+                <div class="report-card">
+                    <div class="report-header daily">
+                        <i class="fas fa-calendar-day"></i>
+                        <h3>일일 보고서</h3>
+                    </div>
+                    <div class="report-content">
+                        <p><strong>실행 시간:</strong> 평일(화-금) 오전 10시</p>
+                        <p><strong>분석 범위:</strong> 최근 24시간</p>
+                        <p><strong>주요 내용:</strong></p>
+                        <ul>
+                            <li>당일 진행된 촬영 업무</li>
+                            <li>긴급 처리 사항</li>
+                            <li>장비 관련 이슈</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="report-card">
+                    <div class="report-header weekly">
+                        <i class="fas fa-calendar-week"></i>
+                        <h3>주간 보고서</h3>
+                    </div>
+                    <div class="report-content">
+                        <p><strong>실행 시간:</strong> 매주 월요일 오전 10시 10분</p>
+                        <p><strong>분석 범위:</strong> 최근 7일</p>
+                        <p><strong>주요 내용:</strong></p>
+                        <ul>
+                            <li>주간 업무 요약</li>
+                            <li>프로젝트 진행 상황</li>
+                            <li>다음 주 예정 사항</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="report-card">
+                    <div class="report-header monthly">
+                        <i class="fas fa-calendar-alt"></i>
+                        <h3>월간 보고서</h3>
+                    </div>
+                    <div class="report-content">
+                        <p><strong>실행 시간:</strong> 매월 첫째 월요일 오전 10시</p>
+                        <p><strong>분석 범위:</strong> 지난달 전체</p>
+                        <p><strong>주요 내용:</strong></p>
+                        <ul>
+                            <li>월간 성과 분석</li>
+                            <li>주요 프로젝트 완료 현황</li>
+                            <li>장비 운영 통계</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 실행 스케줄 -->
+    <section id="schedule" class="schedule">
+        <div class="container">
+            <h2>실행 스케줄</h2>
+            <div class="calendar-view">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>월</th>
+                            <th>화</th>
+                            <th>수</th>
+                            <th>목</th>
+                            <th>금</th>
+                            <th>토</th>
+                            <th>일</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="week-1">
+                            <td class="special">
+                                <div class="day-content">
+                                    <span class="day-number">첫째 주</span>
+                                    <div class="report-tag monthly">월간</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="day-content">
+                                    <div class="report-tag daily">일일</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="day-content">
+                                    <div class="report-tag daily">일일</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="day-content">
+                                    <div class="report-tag daily">일일</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="day-content">
+                                    <div class="report-tag daily">일일</div>
+                                </div>
+                            </td>
+                            <td class="weekend">-</td>
+                            <td class="weekend">-</td>
+                        </tr>
+                        <tr>
+                            <td class="special">
+                                <div class="day-content">
+                                    <span class="day-number">나머지</span>
+                                    <div class="report-tag weekly">주간</div>
+                                    <div class="report-tag monthly-weekly">월간형</div>
+                                </div>
+                            </td>
+                            <td colspan="4" class="regular-days">
+                                <div class="day-content">
+                                    <div class="report-tag daily">일일 보고서</div>
+                                </div>
+                            </td>
+                            <td class="weekend">-</td>
+                            <td class="weekend">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="schedule-note">
+                    <p><i class="fas fa-info-circle"></i> 모든 보고서는 한국시간 기준으로 발송됩니다.</p>
+                    <p><i class="fas fa-clock"></i> 월간형 보고서는 주간 보고서 10분 전에 발송됩니다.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 기술 스택 -->
+    <section class="tech-stack">
+        <div class="container">
+            <h2>사용 기술</h2>
+            <div class="tech-grid">
+                <div class="tech-item">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" alt="TypeScript">
+                    <span>TypeScript</span>
+                </div>
+                <div class="tech-item">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/slack/slack-original.svg" alt="Slack">
+                    <span>Slack API</span>
+                </div>
+                <div class="tech-item">
+                    <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" alt="Gemini">
+                    <span>Gemini AI</span>
+                </div>
+                <div class="tech-item">
+                    <img src="https://cf.appdrag.com/dashboard-openvm-clo-b2d42c/uploads/supabase-TAiY.png" alt="Supabase">
+                    <span>Supabase</span>
+                </div>
+                <div class="tech-item">
+                    <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Actions">
+                    <span>GitHub Actions</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 푸터 -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Slack Report Automation</h3>
+                    <p>AI 기반 슬랙 업무 보고서 자동화 시스템</p>
+                </div>
+                <div class="footer-section">
+                    <h3>링크</h3>
+                    <ul>
+                        <li><a href="https://github.com/garimto81/slack-report-automation" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/garimto81/slack-report-automation/blob/main/README.md" target="_blank">문서</a></li>
+                        <li><a href="https://github.com/garimto81/slack-report-automation/issues" target="_blank">이슈 트래커</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>버전</h3>
+                    <p>v1.2.0</p>
+                    <p>쓰레드 분석 기능 추가</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Slack Report Automation. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
