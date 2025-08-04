@@ -1,6 +1,6 @@
 # GitHub Actions 워크플로우 가이드
 
-## 🎯 카메라 파트 자동 보고 시스템 워크플로우
+## 🎯 카메라 파트 자동 보고 시스템
 
 이 프로젝트는 카메라 파트의 업무를 자동으로 수집, 분석하여 Google Docs에 보고하는 시스템입니다.
 
@@ -24,25 +24,6 @@
   - 1시간 대기 후 재실행
 - **최대 재시도**: 24회 (24시간)
 
-### 3. test-run.yml (전체 테스트)
-- **목적**: 전체 시스템 통합 테스트
-- **실행**: 수동 실행 전용
-- **테스트 항목**:
-  - Firebase 연결 및 데이터 수집
-  - Gemini AI 우선순위 분석
-  - Google Docs 문서 작성
-- **예상 소요 시간**: 8-12분
-- **타임아웃**: 10분
-
-### 4. quick-test.yml (빠른 테스트)
-- **목적**: 빠른 연결 상태 확인
-- **실행**: 수동 실행 전용
-- **테스트 항목**:
-  - Firebase 연결 (데이터 수집)
-  - API 키 유효성 검증
-  - GitHub 리포지토리 접근
-- **예상 소요 시간**: 1-3분
-
 ## 🚀 사용 방법
 
 ### 1. 필수 설정 (GitHub Secrets)
@@ -56,13 +37,13 @@ Repository Settings → Secrets and variables → Actions에서 설정:
 
 ### 2. 워크플로우 실행
 
-#### 자동 실행 (Daily Report)
-- 설정 후 매일 오전 10시 자동 실행
+#### 자동 실행
+- 설정 완료 후 매일 오전 10시 자동 실행
 - 실패 시 1시간마다 자동 재시도
 
 #### 수동 실행
 1. GitHub 리포지토리의 **Actions** 탭 이동
-2. 왼쪽 메뉴에서 원하는 워크플로우 선택
+2. 왼쪽 메뉴에서 **Daily Camera Report** 선택
 3. **Run workflow** 버튼 클릭
 4. 브랜치 선택 (기본: main)
 5. **Run workflow** 클릭
@@ -71,13 +52,13 @@ Repository Settings → Secrets and variables → Actions에서 설정:
 
 #### 성공 시
 - ✅ 녹색 체크 표시
-- Google Docs 문서에서 결과 확인
+- Google Docs 문서에서 결과 확인: https://docs.google.com/document/d/1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow/
 - 로그에서 상세 정보 확인
 
 #### 실패 시
 - ❌ 빨간색 X 표시
 - 클릭하여 상세 로그 확인
-- 자동 재시도 대기 중
+- 자동으로 1시간 후 재시도
 
 ## 📊 Google Docs 문서 구조
 
@@ -104,7 +85,7 @@ Repository Settings → Secrets and variables → Actions에서 설정:
 - cron 표현식이 올바른지 확인
 
 ### 2. Firebase 연결 실패
-- Firebase 프로젝트 설정 확인
+- Firebase 프로젝트 'ggp-camera' 설정 확인
 - 익명 인증 활성화 여부 확인
 - Firestore 보안 규칙 확인
 
@@ -121,21 +102,21 @@ Repository Settings → Secrets and variables → Actions에서 설정:
 ## 📈 모니터링
 
 ### 실행 기록 확인
-1. Actions 탭에서 워크플로우 선택
+1. Actions 탭에서 **Daily Camera Report** 선택
 2. 실행 기록 목록에서 특정 실행 클릭
 3. 각 단계별 로그 확인
 
 ### 실행 통계
 - 평균 실행 시간: 5-7분
-- 성공률 모니터링
-- 실패 패턴 분석
+- 매일 오전 10시 정기 실행
+- 실패 시 최대 24회 재시도
 
 ## 💡 팁
 
-1. **테스트 우선**: 새로운 설정 후 quick-test.yml로 먼저 확인
-2. **로그 확인**: 실패 시 상세 로그에서 구체적인 오류 메시지 확인
-3. **시간대 주의**: 모든 시간은 KST 기준 (UTC+9)
-4. **문서 준비**: Google Docs에 미리 날짜 탭과 표 구조 생성
+1. **로그 확인**: 실패 시 상세 로그에서 구체적인 오류 메시지 확인
+2. **시간대 주의**: 모든 시간은 KST 기준 (UTC+9)
+3. **문서 준비**: Google Docs에 미리 날짜 탭과 표 구조 생성
+4. **테스트**: 수동 실행으로 먼저 테스트 후 자동 실행 활용
 
 ## 🔒 보안 주의사항
 
