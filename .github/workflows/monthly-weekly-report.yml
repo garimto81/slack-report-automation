@@ -1,13 +1,12 @@
-name: Daily Report # main 브랜치의 이름 사용
+name: Monthly Weekly Report
 
 on:
   schedule:
-    # 'aiden/auto-report-system' 브랜치의 매일 실행 스케줄 사용
-    - cron: '0 1 * * *'  # UTC 01:00 = KST 10:00
+    - cron: '0 2 * * 1'  # 매주 월요일 11:00 AM KST (UTC+9)
   workflow_dispatch:
 
 jobs:
-  daily-report: # main 브랜치의 job 이름 사용
+  monthly-weekly-report:
     runs-on: ubuntu-latest
     
     steps:
@@ -26,7 +25,7 @@ jobs:
     - name: Build project
       run: npm run build
       
-    - name: Generate daily report # main 브랜치의 핵심 로직(Slack, Supabase 연동) 사용
+    - name: Generate monthly-weekly report
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
@@ -34,4 +33,4 @@ jobs:
         GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      run: node dist/src/generate-report.js daily
+      run: node dist/src/generate-report.js monthly-weekly

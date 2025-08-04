@@ -86,3 +86,4 @@ src/
 - Google Docs 문서에 편집 권한이 있어야 함
 - 한국 시간(Asia/Seoul) 기준으로 작동
 - Aiden Kim으로 할당된 업무만 수집됨
+
