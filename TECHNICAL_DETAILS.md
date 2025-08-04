@@ -120,7 +120,54 @@ U1234567890: 프로젝트 진행 상황 공유합니다 (답글 5개)
   └─ U5555555555: 일정 조정이 필요할 것 같습니다 (답글)
 ```
 
-### 7. 제한사항 및 개선점
+### 7. 월간 보고서 스케줄링 시스템 (v1.3.0)
+
+#### 월간 보고서 실행 로직
+```typescript
+// .github/workflows/monthly-report.yml
+- name: Check if first Monday of month
+  id: check-first-monday
+  run: |
+    current_date=$(date +%d)
+    if [ $current_date -le 7 ]; then
+      echo "is_first_monday=true" >> $GITHUB_OUTPUT
+    else
+      echo "is_first_monday=false" >> $GITHUB_OUTPUT
+    fi
+
+- name: Generate monthly report
+  if: steps.check-first-monday.outputs.is_first_monday == 'true'
+  run: node dist/generate-report.js --type monthly
+```
+
+**문제 해결**:
+- **이전 문제**: `0 1 1-7 * 1` cron 표현식이 "1-7일 AND 모든 월요일"로 해석
+- **해결책**: 첫째 주 월요일만 체크하는 조건부 로직 추가
+- **결과**: 매월 첫째 주 월요일에만 정확히 실행
+
+#### Monthly-Weekly 보고서 시스템
+```yaml
+# 매주 월요일 10:00 AM (첫째 주 제외)
+schedule:
+  - cron: '0 1 * * 1'  # 매주 월요일 10:00 AM KST
+
+# 실행 조건
+- name: Check if NOT first Monday
+  id: check-not-first-monday
+  run: |
+    current_date=$(date +%d)
+    if [ $current_date -gt 7 ]; then
+      echo "is_not_first_monday=true" >> $GITHUB_OUTPUT
+    else
+      echo "is_not_first_monday=false" >> $GITHUB_OUTPUT
+    fi
+```
+
+**10분 간격 실행**:
+1. **10:00 AM**: Monthly-Weekly 보고서 (weekly 데이터를 monthly 스타일로 분석)
+2. **10:10 AM**: 기존 주간 보고서 (weekly 분석)
+
+### 8. 제한사항 및 개선점
 
 #### 현재 제한사항
 1. **메시지 수 제한**: 메인 메시지 최대 1000개
@@ -176,7 +223,7 @@ const since = new Date();
 since.setTime(since.getTime() - (24 * 60 * 60 * 1000));
 ```
 
-### 7. Gemini AI 분석 프로세스
+### 9. Gemini AI 분석 프로세스
 
 ```typescript
 // src/services/gemini.service.ts
@@ -200,7 +247,7 @@ async analyzeMessages(messages: ChannelMessage[], reportType: 'daily' | 'weekly'
 4. 영상 편집/후반 작업
 5. 일반 행정 업무
 
-### 8. 데이터 저장 구조
+### 10. 데이터 저장 구조
 
 ```typescript
 // Supabase 테이블 구조
@@ -236,13 +283,28 @@ WEEKLY_REPORT_DAY=1
 MONTHLY_REPORT_DAY=1
 ```
 
-### GitHub Actions 스케줄
+### GitHub Actions 스케줄 (v1.3.0)
 ```yaml
+# 일일 보고서 - 화-금요일
 schedule:
-  # 한국시간 오전 10시 = UTC 오전 1시
-  - cron: '0 1 * * 2-5'  # 화-금 일일 보고서
-  - cron: '0 1 * * 1'    # 월요일 주간/월간 보고서
+  - cron: '0 1 * * 2-5'  # 10:00 AM KST
+
+# 주간 보고서 - 월요일 (첫째 주 제외)
+schedule:
+  - cron: '10 1 * * 1'   # 10:10 AM KST
+
+# Monthly-Weekly 보고서 - 월요일 (첫째 주 제외)
+schedule:
+  - cron: '0 1 * * 1'    # 10:00 AM KST
+
+# 월간 보고서 - 첫째 주 월요일만
+schedule:
+  - cron: '0 1 1-7 * 1'  # 첫째 주 월요일 체크 로직 포함
 ```
+
+**실행 순서 (월요일)**:
+1. 첫째 주: 월간 보고서만 (10:00 AM)
+2. 나머지 주: Monthly-Weekly (10:00 AM) → 주간 보고서 (10:10 AM)
 
 ## 📈 성능 고려사항
 
@@ -251,11 +313,32 @@ schedule:
    - Gemini: 분당 60 요청
    - Supabase: 프로젝트 설정에 따라 다름
 
-2. **처리 시간**:
-   - 메시지 수집: ~1-2초
+2. **처리 시간** (v1.2.0 업데이트):
+   - 메시지 수집: ~1-2초 (메인 메시지)
+   - 쓰레드 수집: 쓰레드당 ~0.5초 추가
    - AI 분석: ~3-5초
    - DM 전송: 사용자당 ~0.5초
+   - **총 처리 시간**: 쓰레드 포함 시 2-5배 증가 가능
 
-3. **메모리 사용**:
+3. **메모리 사용** (v1.2.0 업데이트):
    - 1000개 메시지: ~1-2MB
+   - 쓰레드 포함: 메시지 수에 따라 2-10MB
    - AI 프롬프트: 최대 10KB
+
+4. **디버깅 도구** (v1.3.0):
+   - `debug-report.yml` 워크플로우로 실시간 모니터링
+   - 메시지 수집 상태와 AI 분석 결과 추적
+   - GitHub Pages 웹사이트에서 시각적 설명 제공
+
+## 🔍 디버깅 가이드 (v1.3.0)
+
+### 문제 진단 프로세스
+1. **Actions 탭** → "Debug Report Issue" 워크플로우 실행
+2. **로그 확인**: 메시지 수집 단계별 상태
+3. **AI 분석 결과**: 추론 과정과 결과 확인
+4. **환경 변수**: GitHub Secrets 설정 상태
+
+### 자주 발생하는 문제
+1. **"no work to report"**: 메시지는 수집되지만 카메라 관련 업무 없음
+2. **월간 보고서 매일 실행**: v1.3.0에서 수정됨
+3. **쓰레드 누락**: API 권한 또는 rate limit 확인 필요
