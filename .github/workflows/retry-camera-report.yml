@@ -1,0 +1,57 @@
+name: Retry Camera Report on Failure
+
+on:
+  workflow_run:
+    workflows: ["Daily Camera Report"]
+    types:
+      - completed
+
+jobs:
+  retry-on-failure:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    
+    steps:
+    - name: Wait before retry
+      run: |
+        echo "🕐 이전 실행 실패. 1시간 후 재시도합니다..."
+        echo "⏰ 대기 시작: $(date +'%Y-%m-%d %H:%M:%S')"
+        sleep 3600  # 1시간 대기
+        
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Retry camera report generation
+      timeout-minutes: 10
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        GOOGLE_DOC_ID: 1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow
+        TZ: Asia/Seoul
+      run: |
+        echo "🔄 카메라 파트 보고서 재시도..."
+        echo "📅 날짜: $(date +'%Y-%m-%d %H:%M:%S')"
+        npm start -- --camera-report --run-once
+        
+    - name: Report retry status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ 재시도 성공!"
+          echo "📄 Google Docs 확인: https://docs.google.com/document/d/1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow/"
+        else
+          echo "❌ 재시도도 실패했습니다."
+          echo "🔧 수동으로 문제를 확인해주세요."
+        fi
