@@ -1,3 +1,7 @@
+// =======================================
+// Slack 리포트 자동화 시스템 타입 정의
+// =======================================
+
 export interface ChannelMessage {
   user: string;
   text: string;
@@ -48,4 +52,48 @@ export interface Report {
   analysis: ChannelAnalysis;
   createdAt: Date;
   sentTo: string;
+}
+
+
+// =======================================
+// 카메라 파트 업무 자동 보고 시스템 타입 정의
+// =======================================
+
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  assignee: string;
+  progress: number;
+  status: 'pending' | 'in-progress' | 'completed';
+  priority?: 'high' | 'medium' | 'low';
+  startDate?: Date;
+  endDate?: Date;
+  category?: string;
+}
+
+export interface CameraTask extends Task {
+  assignee: 'Aiden Kim';
+  category: 'camera';
+}
+
+export interface PrioritizedTask {
+  task: Task;
+  priorityScore: number;
+  reasoning: string;
+}
+
+export interface ReportData {
+  date: Date;
+  tasks: PrioritizedTask[];
+  totalTasks: number;
+  cameraPartTasks: number;
+}
+
+export interface GoogleDocSection {
+  date: string;
+  part: string;
+  taskName: string;
+  description: string;
+  progress: string;
 }
