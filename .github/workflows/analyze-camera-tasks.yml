@@ -1,0 +1,68 @@
+name: Analyze Camera Tasks with AI
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 1 * * 1-5'  # 매일 오전 10:30 KST (평일만)
+  push:
+    paths:
+      - '.github/workflows/analyze-camera-tasks.yml'
+      - 'analyze-camera-tasks.js'
+
+jobs:
+  analyze-tasks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Check if weekday
+      id: weekday_check
+      run: |
+        DAY_OF_WEEK=$(date +%u)
+        echo "📅 오늘은 $(date +'%Y-%m-%d %A')입니다."
+        if [ $DAY_OF_WEEK -ge 1 ] && [ $DAY_OF_WEEK -le 5 ]; then
+          echo "is_weekday=true" >> $GITHUB_OUTPUT
+          echo "✅ 평일입니다. 업무 분석을 진행합니다."
+        else
+          echo "is_weekday=false" >> $GITHUB_OUTPUT
+          echo "🚫 주말입니다. 업무 분석을 하지 않습니다."
+        fi
+        
+    - name: Analyze camera tasks with Gemini AI
+      if: steps.weekday_check.outputs.is_weekday == 'true'
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        GOOGLE_DOC_ID: 1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow
+        TZ: Asia/Seoul
+      run: |
+        echo "🔍 카메라 파트 업무 AI 분석 시작..."
+        echo "📅 한국 시간: $(date +'%Y-%m-%d %H:%M:%S')"
+        node analyze-camera-tasks.js
+        
+    - name: Report status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ 카메라 파트 업무 분석이 완료되었습니다!"
+          echo "📄 Google Docs 확인: https://docs.google.com/document/d/1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow/"
+          echo ""
+          echo "🤖 Gemini AI가 분석한 내용:"
+          echo "- 우선순위가 높은 업무 선정"
+          echo "- 업무별 핵심 내용 및 방향성 작성"
+          echo "- 진행률 자동 계산"
+        else
+          echo "❌ 업무 분석 실패"
+          echo "🔧 로그를 확인하여 문제를 해결해주세요."
+        fi
