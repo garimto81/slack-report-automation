@@ -1,0 +1,44 @@
+name: Daily Camera Report
+
+on:
+  schedule:
+    # 매일 오전 10시 실행 (KST = UTC+9)
+    - cron: '0 1 * * *'  # UTC 01:00 = KST 10:00
+  workflow_dispatch:  # 수동 실행 가능
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Generate report
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+        GOOGLE_DOC_ID: ${{ secrets.GOOGLE_DOC_ID }}
+        TZ: Asia/Seoul
+      run: npm start -- --run-once
+    
+    - name: Report status
+      if: always()
+      run: |
+        if [ "${{ job.status }}" == "success" ]; then
+          echo "✅ Report generated successfully at $(date)"
+        else
+          echo "❌ Report generation failed at $(date)"
+        fi

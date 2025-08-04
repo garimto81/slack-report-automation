@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/report.js": {
+      "maxDuration": 60
+    }
+  },
+  "env": {
+    "TZ": "Asia/Seoul"
+  }
+}
