@@ -51,7 +51,7 @@ export class GoogleDocsWriterV2 {
       const today = new Date();
       const dateTabName = this.getDateTabName(today); // 예: "250804"
       
-      console.log(`\n🔍 Looking for date tab: ${dateTabName}`);
+      console.log(`\n🔍 Looking for date: ${dateTabName}`);
       console.log(`📄 Document ID: ${documentId}`);
       
       // 문서 구조 분석을 위한 디버그 모드
@@ -69,31 +69,45 @@ export class GoogleDocsWriterV2 {
         this.analyzeDocumentStructure(document.data);
       }
       
-      // 탭 확인 (Google Docs API는 탭을 직접 지원하지 않으므로 대체 방법 사용)
-      const tabInfo = await this.findDateSection(document.data, dateTabName);
-      if (!tabInfo) {
-        console.error(`❌ Date section '${dateTabName}' not found in document`);
-        console.log('💡 Tip: Make sure the document has a section with date format YYMMDD (e.g., 250804)');
-        return false;
+      // 먼저 전체 문서에서 표 찾기
+      const allTables = this.findAllTables(document.data);
+      console.log(`📋 Found ${allTables.length} tables in document`);
+      
+      // 각 표에서 카메라 파트 찾기
+      let cameraLocation = null;
+      let tableInfo = null;
+      
+      for (const table of allTables) {
+        console.log(`\n🔍 Checking table at index ${table.index} (${table.rows} rows x ${table.columns} columns)`);
+        const location = await this.findCameraPartInTable(document.data, table);
+        if (location) {
+          cameraLocation = location;
+          tableInfo = table;
+          break;
+        }
       }
       
-      console.log(`✅ Found date section at index ${tabInfo.startIndex}`);
-      
-      // 해당 섹션에서 표 찾기
-      const tableInfo = await this.findTableInSection(document.data, tabInfo);
-      if (!tableInfo) {
-        console.error('❌ No table found in the date section');
-        return false;
-      }
-      
-      console.log(`✅ Found table with ${tableInfo.rows} rows`);
-      
-      // 표에서 카메라 파트 찾기
-      const cameraLocation = await this.findCameraPartInTable(document.data, tableInfo);
       if (!cameraLocation) {
-        console.error('❌ Camera part (카메라 Aiden Kim) not found in table');
-        console.log('💡 Tip: Make sure the table has a row with "카메라 Aiden Kim" in the first column');
-        return false;
+        console.error('❌ Camera part (카메라 Aiden Kim) not found in any table');
+        console.log('💡 Tip: Make sure there is a table with "카메라 Aiden Kim" in the first column');
+        
+        // 날짜 섹션 방식도 시도
+        console.log('\n🔄 Trying date section approach...');
+        const tabInfo = await this.findDateSection(document.data, dateTabName);
+        if (tabInfo) {
+          console.log(`Found date section at index ${tabInfo.startIndex}`);
+          const sectionTable = await this.findTableInSection(document.data, tabInfo);
+          if (sectionTable) {
+            cameraLocation = await this.findCameraPartInTable(document.data, sectionTable);
+            if (cameraLocation) {
+              console.log('✅ Found camera part using date section approach');
+            }
+          }
+        }
+        
+        if (!cameraLocation) {
+          return false;
+        }
       }
       
       console.log(`✅ Found camera part at row ${cameraLocation.rowIndex}`);
@@ -154,6 +168,27 @@ export class GoogleDocsWriterV2 {
     }
     
     console.log(`\nSummary: ${paragraphCount} paragraphs, ${tableCount} tables`);
+  }
+  
+  private findAllTables(document: any): any[] {
+    const content = document.body.content;
+    const tables: any[] = [];
+    
+    for (let i = 0; i < content.length; i++) {
+      const element = content[i];
+      if (element.table) {
+        tables.push({
+          index: i,
+          startIndex: element.startIndex,
+          endIndex: element.endIndex,
+          rows: element.table.rows,
+          columns: element.table.columns,
+          tableElement: element.table
+        });
+      }
+    }
+    
+    return tables;
   }
   
   private async findDateSection(document: any, dateTabName: string): Promise<any> {

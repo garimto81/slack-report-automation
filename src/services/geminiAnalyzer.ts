@@ -8,7 +8,7 @@ export class GeminiAnalyzer {
   
   constructor() {
     this.genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    this.model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   }
   
   async prioritizeTasks(tasks: Task[]): Promise<PrioritizedTask[]> {
