@@ -1,124 +1,89 @@
-# Slack Report Automation
+# 카메라 파트 업무 자동 보고 시스템
 
-슬랙 채널을 Gemini AI로 분석하여 자동으로 일일/주간/월간 보고서를 생성하고 DM으로 전송하는 시스템입니다.
+카메라 파트의 업무를 자동으로 수집, 분석하여 Google Docs에 보고하는 자동화 시스템입니다.
 
-## 기능
+## 주요 기능
 
-- 🤖 Gemini AI를 활용한 지능형 채널 분석
-- 📊 일일/주간/월간 채널 활동 인사이트
-- 📨 여러 사용자에게 동시에 DM으로 보고서 전송
-- 🧵 슬랙 쓰레드 메시지 포함 분석 ✨ **NEW**
-- 💾 Supabase에 보고서 히스토리 저장
-- ⏰ GitHub Actions를 통한 자동 스케줄링
-- 🔍 감정 분석, 주요 토픽, 액션 아이템 추출
+1. **데이터 수집**
+   - Firebase Firestore에서 직접 카메라 파트 업무 정보 수집
+   - https://github.com/garimto81/slack-report-automation 리포지토리에서 관련 활동 추적
 
-## 최신 업데이트 (v1.2.0)
+2. **AI 분석**
+   - Gemini AI를 활용한 업무 우선순위 분석
+   - 가장 중요한 3개 업무 자동 선정
 
-- **쓰레드 메시지 수집**: 이제 쓰레드의 모든 답글을 포함하여 완전한 대화 컨텍스트를 분석합니다!
-- **다중 사용자 지원**: 여러 사용자에게 동시에 보고서 전송 가능 (v1.1.0)
-- 자세한 변경사항은 [CHANGELOG.md](CHANGELOG.md)를 참조하세요.
+3. **자동 보고**
+   - Google Docs 문서에 자동 입력
+   - 매일 오전 10시 자동 실행
+   - 실패 시 매시간 재시도
 
-## 설정 방법
+## 설치 및 설정
 
-### 1. Slack 앱 생성
-
-1. [api.slack.com/apps](https://api.slack.com/apps)에서 새 앱 생성
-2. OAuth & Permissions에서 다음 권한 추가:
-   - `channels:history` - 채널 메시지 읽기
-   - `chat:write` - 메시지 전송
-   - `im:write` - DM 전송
-3. Bot User OAuth Token 복사
-
-### 2. Supabase 프로젝트 설정
-
-1. [supabase.com](https://supabase.com)에서 프로젝트 생성
-2. SQL Editor에서 `supabase/migrations/001_create_reports_table.sql` 실행
-3. Project URL과 anon key 복사
-
-### 3. Gemini AI 설정
-
-1. [Google AI Studio](https://makersuite.google.com/app/apikey)에서 API Key 발급
-2. 생성된 API Key 복사
-
-### 4. GitHub 저장소 설정
-
-1. 이 코드를 GitHub 저장소에 푸시
-2. Settings > Secrets and variables > Actions에서 다음 시크릿 추가:
-   - `SLACK_BOT_TOKEN`
-   - `SLACK_CHANNEL_ID` (분석할 채널 ID)
-   - `SLACK_DM_USER_IDS` (보고서 받을 사용자 ID들, 쉼표로 구분. 예: U1234567890,U0987654321)
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `GEMINI_API_KEY`
-
-### 5. 로컬 개발
-
+### 1. 의존성 설치
 ```bash
-# 의존성 설치
 npm install
+```
 
-# .env 파일 생성 (`.env.example` 참고)
-cp .env.example .env
+### 2. 환경 변수 설정
+`.env.example`을 `.env`로 복사하고 필요한 값들을 입력:
 
-# 개발 서버 실행
-npm run dev
+```env
+GEMINI_API_KEY=your_gemini_api_key
+GOOGLE_SERVICE_ACCOUNT_KEY='{"type":"service_account",...}'
+GOOGLE_DOC_ID=1DuwfBuYRi5PH3tpGfme8_p3yqU1LdNve-842K2KOvQo
+```
 
-# 빌드
+### 3. TypeScript 빌드
+```bash
 npm run build
 ```
 
-### 6. 다중 사용자 설정
+## 실행 방법
 
-여러 사용자에게 보고서를 전송하려면:
-
-1. **환경 변수에서**: `SLACK_DM_USER_IDS=U1234567890,U0987654321,U5555555555`
-2. **GitHub Secrets에서**: 동일한 형식으로 설정
-3. **사용자 ID 찾기**:
-   - Slack에서 사용자 프로필 클릭
-   - "View full profile" → "More" → "Copy member ID"
-
-## 사용 방법
-
-### GitHub Actions (자동 실행)
-
-- 일일 보고서: 매일 오전 9시 UTC
-- 주간 보고서: 매주 월요일 오전 9시 UTC  
-- 월간 보고서: 매월 1일 오전 9시 UTC
-
-수동 실행: Actions 탭에서 "Run workflow" 클릭
-
-### 로컬 실행
-
+### 스케줄러 모드 (기본)
 ```bash
-# 특정 보고서 생성
-node dist/generate-report.js --type daily
-node dist/generate-report.js --type weekly
-node dist/generate-report.js --type monthly
-
-# 스케줄러 실행 (계속 실행됨)
 npm start
 ```
 
-## 보고서 내용
+### 1회 실행 모드
+```bash
+npm start -- --run-once
+```
 
-### 일일 보고서
-- AI 기반 일일 활동 요약
-- 감정 분석 (긍정/중립/부정)
-- 상위 기여자 및 기여 내용
-- 주요 토픽 및 액션 아이템
+### 개발 모드
+```bash
+npm run dev
+```
 
-### 주간 보고서
-- AI 기반 주간 인사이트
-- 주요 의사결정 사항
-- 우려사항 및 이슈 추적
-- 상위 기여자 분석
+## 프로젝트 구조
 
-### 월간 보고서
-- AI 기반 월간 종합 분석
-- 주요 토론 주제 심층 분석
-- 트렌드 키워드 및 맥락
-- 전체 기여자 순위 및 영향력
+```
+src/
+├── config/          # 설정 관리
+├── services/        # 핵심 서비스
+│   ├── firebaseDataFetcher.ts   # Firebase 데이터 수집
+│   ├── githubDataFetcher.ts     # GitHub 데이터 수집
+│   ├── geminiAnalyzer.ts        # AI 분석
+│   ├── googleDocsWriter.ts      # Google Docs 작성
+│   ├── reportGenerator.ts       # 리포트 생성 통합
+│   └── scheduler.ts             # 스케줄링 관리
+├── types/           # TypeScript 타입 정의
+├── utils/           # 유틸리티 함수
+└── index.ts         # 진입점
+```
 
-## 라이선스
+## Google 인증 설정
 
-MIT
+1. Google Cloud Console에서 서비스 계정 생성
+2. Google Docs API 활성화
+3. 서비스 계정에 문서 편집 권한 부여
+4. 서비스 계정 키를 JSON으로 다운로드
+5. 환경 변수에 설정
+
+## 주의사항
+
+- Firebase 프로젝트 'ggp-camera'에 접근 가능해야 함
+- Google Docs 문서에 편집 권한이 있어야 함
+- 한국 시간(Asia/Seoul) 기준으로 작동
+- Aiden Kim으로 할당된 업무만 수집됨
+

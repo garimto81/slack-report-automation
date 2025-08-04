@@ -1,12 +1,13 @@
-name: Daily Report
+name: Daily Report # main 브랜치의 이름 사용
 
 on:
   schedule:
-    - cron: '0 1 * * 2-5'  # 화-금 10:00 AM KST (UTC+9)
+    # 'aiden/auto-report-system' 브랜치의 매일 실행 스케줄 사용
+    - cron: '0 1 * * *'  # UTC 01:00 = KST 10:00
   workflow_dispatch:
 
 jobs:
-  daily-report:
+  daily-report: # main 브랜치의 job 이름 사용
     runs-on: ubuntu-latest
     
     steps:
@@ -25,7 +26,7 @@ jobs:
     - name: Build project
       run: npm run build
       
-    - name: Generate daily report
+    - name: Generate daily report # main 브랜치의 핵심 로직(Slack, Supabase 연동) 사용
       env:
         SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
