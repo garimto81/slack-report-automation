@@ -30,18 +30,13 @@ jobs:
         cache: 'npm'
         
     - name: Install dependencies
-      run: |
-        cd slack-report-automation
-        npm install
+      run: npm install
         
     - name: Create service account key file
-      run: |
-        cd slack-report-automation
-        echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' > service-account-key-fixed.json
+      run: echo '${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}' > service-account-key-fixed.json
         
     - name: Create environment file
       run: |
-        cd slack-report-automation
         cat << EOF > .env
         SLACK_BOT_TOKEN=${{ secrets.SLACK_BOT_TOKEN }}
         SLACK_CHANNEL_ID=${{ secrets.SLACK_CHANNEL_ID }}
@@ -51,9 +46,7 @@ jobs:
         EOF
         
     - name: Run automated camera update
-      run: |
-        cd slack-report-automation
-        node automated-camera-update.js
+      run: node automated-camera-update.js
       env:
         TZ: 'Asia/Seoul'
         FORCE_RUN: ${{ github.event.inputs.force_run }}
