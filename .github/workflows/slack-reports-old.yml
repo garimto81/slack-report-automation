@@ -24,6 +24,7 @@ on:
 
 env:
   TZ: Asia/Seoul
+  NODE_VERSION: '18'
 
 jobs:
   generate-report:
@@ -34,30 +35,38 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: ${{ env.NODE_VERSION }}
+          cache: ''
 
-      - name: Show environment
+      - name: Verify environment
         run: |
-          echo "📁 Current directory: $(pwd)"
-          echo "📋 Files:"
+          echo "📁 Working directory: $(pwd)"
+          echo "📋 Repository structure:"
           ls -la
           echo ""
-          echo "🔧 Node version: $(node --version)"
-          echo "📦 NPM version: $(npm --version)"
+          echo "📦 Package files check:"
+          if [ -f "package.json" ]; then
+            echo "✅ package.json found"
+            echo "   Content preview:"
+            head -5 package.json
+          else
+            echo "❌ package.json not found"
+          fi
+          echo ""
+          if [ -f "package-lock.json" ]; then
+            echo "✅ package-lock.json found ($(wc -l < package-lock.json) lines)"
+          else
+            echo "❌ package-lock.json not found"
+          fi
 
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          if [ -f "package.json" ]; then
-            npm install
-            echo "✅ Dependencies installed"
-          else
-            echo "❌ package.json not found!"
-            exit 1
-          fi
+          npm install
+          echo "✅ Dependencies installed successfully"
 
       - name: Determine report type
         id: report
