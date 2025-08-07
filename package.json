@@ -16,12 +16,14 @@
     "docs:daily": "node generate-google-docs-report.js daily",
     "docs:weekly": "node generate-google-docs-report.js weekly",
     "docs:monthly": "node generate-google-docs-report.js monthly",
-    "camera:update": "node update-camera-table.js",
-    "camera:daily": "node update-camera-table.js daily",
-    "camera:weekly": "node update-camera-table.js weekly",
-    "camera:monthly": "node update-camera-table.js monthly",
-    "camera:test": "node update-camera-table.js --test",
-    "test:camera": "node test-camera-table-finder.js"
+    "camera:update": "node update-camera-rows.js",
+    "camera:daily": "node update-camera-rows.js daily",
+    "camera:weekly": "node update-camera-rows.js weekly",
+    "camera:monthly": "node update-camera-rows.js monthly",
+    "camera:test": "node test-camera-rows.js",
+    "test:camera": "node test-camera-table-finder.js",
+    "camera:auto": "node automated-camera-update.js",
+    "schedule:test": "node -e \"console.log('Test scheduled job:', require('./automated-camera-update').getKoreanTime())\""
   },
   "keywords": [
     "slack",
@@ -38,6 +40,7 @@
     "@slack/web-api": "^7.8.0",
     "@vercel/node": "^3.2.24",
     "dotenv": "^16.4.7",
+    "google-auth-library": "^10.2.1",
     "googleapis": "^144.0.0",
     "node-cron": "^3.0.3"
   },
