@@ -1,17 +1,17 @@
+# .github/workflows/automated-reports.yml
+
 name: Automated Slack Reports
 
 on:
+  # 1. 스케줄 실행: 매일 오전 9시 (KST)에 워크플로우를 트리거합니다.
   schedule:
-    # 일간 보고서 - 매일 오전 9시 (한국 시간)
-    - cron: '0 0 * * *'  # UTC 0:00 = KST 9:00
-    # 주간 보고서 - 매주 월요일 오전 9시 (한국 시간)
-    - cron: '0 0 * * 1'  # UTC 0:00 Monday = KST 9:00 Monday
-    # 월간 보고서 - 매월 1일 오전 9시 (한국 시간)
-    - cron: '0 0 1 * *'  # UTC 0:00 1st = KST 9:00 1st
+    - cron: '0 0 * * *'  # UTC 0시 = KST 오전 9시
+
+  # 2. 수동 실행: 필요시 'daily', 'weekly', 'monthly' 리포트를 선택하여 직접 실행합니다.
   workflow_dispatch:
     inputs:
       report_type:
-        description: 'Report type to generate'
+        description: '실행할 리포트 종류 선택'
         required: true
         default: 'daily'
         type: choice
@@ -20,48 +20,102 @@ on:
           - weekly
           - monthly
 
+  # 3. 코드 변경 시 테스트: main 브랜치에 push 또는 pull request가 발생했을 때 테스트 작업을 실행합니다.
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  daily-report:
-    name: Generate Daily Report
+  # ===============================================
+  # ==      리포트 생성 작업 (일간/주간/월간)       ==
+  # ===============================================
+  generate-report:
+    # 작업 이름에 매트릭스 컨텍스트를 사용하여 어떤 리포트인지 명확히 표시합니다.
+    name: Generate ${{ matrix.report_type }} Report
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 * * *') || github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'daily'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
+    # 'matrix' 전략을 사용하여 중복되는 코드를 하나로 통합합니다.
+    strategy:
+      fail-fast: false # 하나의 리포트가 실패해도 다른 리포트는 계속 실행됩니다.
+      matrix:
+        # 수동 실행 시에는 선택된 값을, 그 외에는 기본값 'daily'를 사용합니다.
+        # 이 매트릭스는 스케줄 실행 시 아래 'Determine report types' 단계에서 필터링됩니다.
+        report_type: [ 'daily', 'weekly', 'monthly' ]
+
+    steps:
+      # 1. 코드 체크아웃 (v4 사용, 경로 문제 해결을 위해 'path' 옵션 제거)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Node.js 환경 설정 (v4 사용)
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
 
+      # 3. NPM 의존성 설치
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Daily Report
+      # 4. (스케줄 실행 시) 오늘 실행할 리포트 종류 결정
+      - name: Determine report types to run on schedule
+        id: get_reports
+        # 이 단계는 'schedule' 이벤트일 때만 실행됩니다.
+        if: github.event_name == 'schedule'
+        run: |
+          REPORTS_TO_RUN=""
+          # 매일 실행되므로 'daily'는 항상 포함
+          REPORTS_TO_RUN="daily"
+          
+          # 오늘이 월요일(1)이면 'weekly' 추가
+          if [[ $(date -u +%u) == 1 ]]; then
+            REPORTS_TO_RUN="$REPORTS_TO_RUN weekly"
+          fi
+
+          # 오늘이 1일이면 'monthly' 추가
+          if [[ $(date -u +%d) == "01" ]]; then
+            REPORTS_TO_RUN="$REPORTS_TO_RUN monthly"
+          fi
+          
+          echo "reports=${REPORTS_TO_RUN}" >> "$GITHUB_OUTPUT"
+          echo "✅ Reports to run today: ${REPORTS_TO_RUN}"
+
+      # 5. 리포트 생성 스크립트 실행
+      - name: Generate Report
+        # 아래 조건 중 하나를 만족할 때 실행됩니다:
+        # - 수동 실행('workflow_dispatch')이고, 매트릭스의 report_type이 선택된 값과 일치할 때
+        # - 스케줄 실행('schedule')이고, 오늘 실행해야 할 리포트 종류에 현재 매트릭스의 report_type이 포함될 때
+        if: |
+          (github.event_name == 'workflow_dispatch' && matrix.report_type == github.event.inputs.report_type) ||
+          (github.event_name == 'schedule' && contains(steps.get_reports.outputs.reports, matrix.report_type))
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           TZ: Asia/Seoul
-        run: node generate-full-report.js daily
+        # matrix.report_type 값을 Node.js 스크립트의 인자로 전달합니다.
+        run: node generate-full-report.js ${{ matrix.report_type }}
 
-      - name: Log completion
-        run: echo "✅ Daily report sent successfully at $(date '+%Y-%m-%d %H:%M:%S KST')"
-
-  weekly-report:
-    name: Generate Weekly Report
+  # ===============================================
+  # ==          로직 테스트 작업 (Push/PR)          ==
+  # ===============================================
+  test-logic:
+    name: Test Grouping Logic
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 * * 1') || github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'weekly'
-    
+    # 이 작업은 'push' 또는 'pull_request' 이벤트일 때만 실행됩니다.
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
@@ -69,73 +123,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Generate Weekly Report
+      - name: Run Test Script
         env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TZ: Asia/Seoul
-        run: node generate-full-report.js weekly
-
-      - name: Log completion
-        run: echo "✅ Weekly report sent successfully at $(date '+%Y-%m-%d %H:%M:%S KST')"
-
-  monthly-report:
-    name: Generate Monthly Report
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 1 * *') || github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'monthly'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Monthly Report
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TZ: Asia/Seoul
-        run: node generate-full-report.js monthly
-
-      - name: Log completion
-        run: echo "✅ Monthly report sent successfully at $(date '+%Y-%m-%d %H:%M:%S KST')"
-
-  test-report:
-    name: Test Report Generation
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Test Grouping Logic
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # 테스트에 필요한 최소한의 secrets만 전달
           TZ: Asia/Seoul
         run: |
           echo "🧪 Testing grouping logic..."
-          node test-grouping-logic.js daily
+          node test-grouping-logic.js
           echo "✅ Grouping logic test completed"
