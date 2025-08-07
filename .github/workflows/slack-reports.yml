@@ -24,13 +24,37 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './package-lock.json'
+      
+      - name: Verify package files
+        run: |
+          echo "📁 Current working directory: $(pwd)"
+          echo "📋 Listing files in current directory:"
+          ls -la
+          echo "🔍 Checking for package files:"
+          if [ -f "package.json" ]; then
+            echo "✅ package.json found"
+            echo "📄 package.json contents:"
+            cat package.json
+          else
+            echo "❌ package.json not found"
+          fi
+          if [ -f "package-lock.json" ]; then
+            echo "✅ package-lock.json found"
+          else
+            echo "❌ package-lock.json not found"
+          fi
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm ci
 
       - name: Determine report type
         id: report
