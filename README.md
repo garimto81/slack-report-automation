@@ -60,17 +60,18 @@ npm install
 
 ### 2️⃣ 환경 변수 설정
 
-`.env` 파일 생성:
+`.env` 파일 생성 (`.env.example` 참조):
 ```bash
 # Core System
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-supabase-key
 GEMINI_API_KEY=your-gemini-api-key
 SLACK_BOT_TOKEN=xoxb-your-slack-token
+SLACK_CHANNEL_ID=C1234567890
 
 # Google Docs Extension (필수)
 GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account",...}
-GOOGLE_DOC_ID=1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow
+GOOGLE_DOCS_ID=1QvLn7yJJ1c3xtwF8bd4lK_k6FL4hmcT5TiGvoeGRPow
 VERCEL_API_URL=https://your-app.vercel.app
 
 # Optional
@@ -207,6 +208,7 @@ GET /api/slack-reports/250806
 
 ### GitHub Actions
 - **Daily Report**: 매일 오전 6시 자동 실행
+- **Camera Part Auto Update**: 평일 오전 10시 자동 실행 (월-금)
 - **Google Docs Update**: 매일 오전 10:30 자동 실행  
 - **Weekly Summary**: 주간 요약 보고서
 - **Monthly Review**: 월간 성과 분석
