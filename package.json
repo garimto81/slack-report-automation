@@ -11,7 +11,11 @@
     "monthly": "node generate-full-report.js monthly",
     "analyze": "node analyze-slack-channel.js",
     "build": "tsc",
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "docs": "node generate-google-docs-report.js",
+    "docs:daily": "node generate-google-docs-report.js daily",
+    "docs:weekly": "node generate-google-docs-report.js weekly",
+    "docs:monthly": "node generate-google-docs-report.js monthly"
   },
   "keywords": [
     "slack",
