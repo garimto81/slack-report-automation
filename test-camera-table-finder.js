@@ -2,6 +2,7 @@
  * 카메라 테이블 찾기 기능 테스트 스크립트
  */
 
+require('dotenv').config();
 const { findCameraTableInDocument, generateTodayTabName } = require('./google-docs-table-finder');
 
 /**
