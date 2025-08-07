@@ -88,9 +88,10 @@ jobs:
           
           # 자동 우선순위 판단 (월간 > 주간 > 일간)
           if [ -z "$REPORT_TYPE" ] || [ "$REPORT_TYPE" = "auto" ]; then
-            if [ "$DAY_OF_MONTH" = "01" ]; then
+            # 첫째주 월요일 체크 (1-7일 사이의 월요일)
+            if [ "$DAY_OF_WEEK" = "1" ] && [ "$DAY_OF_MONTH" -ge 1 ] && [ "$DAY_OF_MONTH" -le 7 ]; then
               REPORT_TYPE="monthly"
-              echo "📊 Priority 1: MONTHLY (1st of month)"
+              echo "📊 Priority 1: MONTHLY (First Monday of month)"
               echo "💡 This replaces weekly and daily reports"
             elif [ "$DAY_OF_WEEK" = "1" ]; then
               REPORT_TYPE="weekly"
