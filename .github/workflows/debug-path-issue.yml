@@ -1,0 +1,162 @@
+name: Debug Path Issue - Step by Step Analysis
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_level:
+        description: 'Debug level (1=basic, 2=detailed, 3=full)'
+        required: true
+        default: '2'
+        type: choice
+        options:
+          - '1'
+          - '2' 
+          - '3'
+
+jobs:
+  debug-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: "Phase 1 - Initial Environment"
+        run: |
+          echo "🔍 PHASE 1: Initial GitHub Actions Environment"
+          echo "================================================"
+          echo "Runner OS: $RUNNER_OS"
+          echo "GitHub Workspace: $GITHUB_WORKSPACE"
+          echo "Current PWD: $(pwd)"
+          echo "Home Directory: $HOME"
+          echo "Runner Workspace: $RUNNER_WORKSPACE"
+          echo ""
+          echo "📁 Initial Directory Contents:"
+          ls -la
+          echo ""
+          echo "📂 Parent Directory Structure:"
+          ls -la ../
+          echo ""
+          
+      - name: "Phase 2 - Pre-Checkout Analysis"
+        run: |
+          echo "🔍 PHASE 2: Pre-Checkout Directory Analysis"
+          echo "============================================="
+          echo "Current working directory: $(pwd)"
+          echo "Directory tree from root:"
+          find /home/runner/work -name "*slack-report*" -type d 2>/dev/null || echo "No slack-report directories found yet"
+          echo ""
+          
+      - name: "Phase 3 - Checkout Repository"
+        uses: actions/checkout@v4
+        
+      - name: "Phase 4 - Post-Checkout Analysis"  
+        run: |
+          echo "🔍 PHASE 4: Post-Checkout Analysis"
+          echo "=================================="
+          echo "Current PWD after checkout: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+          echo ""
+          echo "Looking for package files:"
+          find . -name "package*.json" -type f
+          echo ""
+          echo "Complete directory structure:"
+          if [ "${{ inputs.debug_level }}" = "3" ]; then
+            find /home/runner/work -name "*slack-report*" -type d 2>/dev/null
+            echo ""
+            echo "Detailed workspace structure:"
+            ls -la /home/runner/work/
+          fi
+          
+      - name: "Phase 5 - Node.js Setup Analysis"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: "Phase 6 - Post-Setup Analysis"
+        run: |
+          echo "🔍 PHASE 6: Post Node.js Setup Analysis"
+          echo "======================================="
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Current working directory: $(pwd)"
+          echo "NPM working directory: $(npm prefix)"
+          echo ""
+          echo "Verifying package files accessibility:"
+          echo "package.json exists: $([ -f package.json ] && echo 'YES' || echo 'NO')"
+          echo "package-lock.json exists: $([ -f package-lock.json ] && echo 'YES' || echo 'NO')"
+          echo ""
+          if [ "${{ inputs.debug_level }}" != "1" ]; then
+            echo "Package.json content preview:"
+            if [ -f package.json ]; then
+              head -10 package.json
+            else
+              echo "❌ package.json not found in current directory"
+            fi
+          fi
+          
+      - name: "Phase 7 - Path Resolution Test"
+        run: |
+          echo "🔍 PHASE 7: Path Resolution Test"
+          echo "================================"
+          echo "Testing different path approaches:"
+          echo ""
+          echo "1. Current directory (.):"
+          ls -la ./package*.json 2>/dev/null || echo "   No package files in current directory"
+          echo ""
+          echo "2. Absolute GITHUB_WORKSPACE:"
+          ls -la "$GITHUB_WORKSPACE"/package*.json 2>/dev/null || echo "   No package files in GITHUB_WORKSPACE"
+          echo ""
+          echo "3. Relative parent directory (../*):"
+          ls -la ../*/package*.json 2>/dev/null || echo "   No package files in parent subdirectories"
+          echo ""
+          echo "4. Deep search from workspace root:"
+          find "$RUNNER_WORKSPACE" -name "package.json" -type f 2>/dev/null || echo "   No package.json found in workspace"
+          echo ""
+          echo "🎯 Path Resolution Summary:"
+          echo "GITHUB_WORKSPACE = $GITHUB_WORKSPACE"
+          echo "PWD = $(pwd)"
+          echo "Are they the same? $([ "$GITHUB_WORKSPACE" = "$(pwd)" ] && echo 'YES' || echo 'NO')"
+          
+      - name: "Phase 8 - Final Diagnosis"
+        run: |
+          echo "🎯 FINAL DIAGNOSIS"
+          echo "=================="
+          
+          PACKAGE_JSON_PATH=""
+          PACKAGE_LOCK_PATH=""
+          
+          # Find package files
+          if [ -f "./package.json" ]; then
+            PACKAGE_JSON_PATH="./package.json"
+          elif [ -f "$GITHUB_WORKSPACE/package.json" ]; then
+            PACKAGE_JSON_PATH="$GITHUB_WORKSPACE/package.json"
+          else
+            PACKAGE_JSON_PATH=$(find /home/runner/work -name "package.json" -type f 2>/dev/null | head -1)
+          fi
+          
+          if [ -f "./package-lock.json" ]; then
+            PACKAGE_LOCK_PATH="./package-lock.json"
+          elif [ -f "$GITHUB_WORKSPACE/package-lock.json" ]; then
+            PACKAGE_LOCK_PATH="$GITHUB_WORKSPACE/package-lock.json"
+          else
+            PACKAGE_LOCK_PATH=$(find /home/runner/work -name "package-lock.json" -type f 2>/dev/null | head -1)
+          fi
+          
+          echo "📦 Package Files Location:"
+          echo "package.json: ${PACKAGE_JSON_PATH:-'NOT FOUND'}"
+          echo "package-lock.json: ${PACKAGE_LOCK_PATH:-'NOT FOUND'}"
+          echo ""
+          
+          if [ -n "$PACKAGE_JSON_PATH" ] && [ -n "$PACKAGE_LOCK_PATH" ]; then
+            echo "✅ Both package files found!"
+            echo "🔧 Recommended fix: Use working-directory or cd to $(dirname "$PACKAGE_JSON_PATH")"
+          else
+            echo "❌ Package files missing or not accessible"
+            echo "🔧 Recommended fix: Check repository files and checkout configuration"
+          fi
+          
+          echo ""
+          echo "🚀 Next Steps:"
+          echo "1. Run 'path-solution-test.yml' workflow with appropriate solution"
+          echo "2. If files found, use working-directory pointing to $(dirname "${PACKAGE_JSON_PATH:-$GITHUB_WORKSPACE}")"
+          echo "3. Verify with 'bulletproof-deployment.yml' for final confirmation"
