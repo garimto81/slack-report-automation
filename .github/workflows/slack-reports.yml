@@ -34,10 +34,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js 18
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: '18'
 
       - name: Show environment
         run: |
@@ -51,25 +51,9 @@ jobs:
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
-          echo "📁 Current working directory: $(pwd)"
-          echo "📋 Contents:"
+          pwd
           ls -la
-          echo ""
-          
-          if [ -f "package.json" ]; then
-            echo "✅ package.json found"
-            echo "📦 Running npm install..."
-            npm install --no-fund --no-audit
-            echo "✅ Dependencies installed successfully"
-            echo ""
-            echo "📋 node_modules created:"
-            [ -d "node_modules" ] && echo "✅ node_modules exists" || echo "❌ node_modules not found"
-          else
-            echo "❌ package.json not found!"
-            echo "📁 Files in current directory:"
-            ls -la
-            exit 1
-          fi
+          npm install
 
       - name: Determine report type
         id: report
