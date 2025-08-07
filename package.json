@@ -1,0 +1,46 @@
+{
+  "name": "slack-report-automation",
+  "version": "2.0.0",
+  "description": "AI-based automated Slack report generation system with task grouping",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test-grouping-logic.js",
+    "daily": "node generate-full-report.js daily",
+    "weekly": "node generate-full-report.js weekly",
+    "monthly": "node generate-full-report.js monthly",
+    "analyze": "node analyze-slack-channel.js",
+    "build": "tsc",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "slack",
+    "automation",
+    "reports",
+    "ai",
+    "gemini",
+    "task-grouping"
+  ],
+  "author": "Camera Team",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@slack/web-api": "^7.8.0",
+    "@vercel/node": "^3.2.24",
+    "dotenv": "^16.4.7",
+    "googleapis": "^144.0.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/node-cron": "^3.0.11",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/garimto81/slack-report-automation.git"
+  }
+}

@@ -1,0 +1,178 @@
+name: Slack Reports (Production Stable)
+
+on:
+  schedule:
+    - cron: '0 0 * * 1-5'  # 평일 오전 9시 (KST)
+  workflow_dispatch:
+    inputs:
+      report_type:
+        description: 'Report type to generate'
+        required: true
+        default: 'auto'
+        type: choice
+        options:
+          - auto
+          - daily
+          - weekly
+          - monthly
+
+env:
+  TZ: Asia/Seoul
+
+jobs:
+  generate-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Verify environment
+        run: |
+          echo "🔍 Environment Check"
+          echo "Working directory: $(pwd)"
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          
+          # Verify essential files exist
+          if [ ! -f "package.json" ]; then
+            echo "❌ package.json missing!"
+            exit 1
+          fi
+          
+          if [ ! -f "package-lock.json" ]; then
+            echo "❌ package-lock.json missing!"
+            exit 1
+          fi
+          
+          if [ ! -f "generate-full-report.js" ]; then
+            echo "❌ generate-full-report.js missing!"
+            exit 1
+          fi
+          
+          echo "✅ All essential files present"
+          
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install --only=production
+          echo "✅ Dependencies installed successfully"
+          
+      - name: Verify required packages
+        run: |
+          echo "🔍 Verifying required packages..."
+          
+          # Check if main dependencies are installed
+          if [ ! -d "node_modules/@slack/web-api" ]; then
+            echo "❌ @slack/web-api not installed!"
+            exit 1
+          fi
+          
+          if [ ! -d "node_modules/@google/generative-ai" ]; then
+            echo "❌ @google/generative-ai not installed!"
+            exit 1
+          fi
+          
+          echo "✅ All required packages verified"
+          
+      - name: Verify environment variables
+        run: |
+          echo "🔐 Checking environment variables..."
+          
+          if [ -z "${{ secrets.SLACK_BOT_TOKEN }}" ]; then
+            echo "❌ SLACK_BOT_TOKEN secret not set!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.SLACK_CHANNEL_ID }}" ]; then
+            echo "❌ SLACK_CHANNEL_ID secret not set!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.SLACK_DM_USER_IDS }}" ]; then
+            echo "❌ SLACK_DM_USER_IDS secret not set!"
+            exit 1
+          fi
+          
+          if [ -z "${{ secrets.GEMINI_API_KEY }}" ]; then
+            echo "❌ GEMINI_API_KEY secret not set!"
+            exit 1
+          fi
+          
+          echo "✅ All environment variables verified"
+
+      - name: Determine report type
+        id: report
+        run: |
+          REPORT_TYPE=""
+          DAY_OF_WEEK=$(date +%u)
+          DAY_OF_MONTH=$(date +%d)
+          
+          echo "📅 Current date info:"
+          echo "Day of week: $DAY_OF_WEEK (1=Mon, 7=Sun)"
+          echo "Day of month: $DAY_OF_MONTH"
+          
+          # Weekend skip logic
+          if [ $DAY_OF_WEEK -ge 6 ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            REPORT_TYPE="skip"
+            echo "🚫 Weekend detected - skipping automatic report"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            REPORT_TYPE="${{ github.event.inputs.report_type }}"
+            echo "👤 Manual execution - type: $REPORT_TYPE"
+          fi
+          
+          # Auto priority logic: Monthly > Weekly > Daily
+          if [ -z "$REPORT_TYPE" ] || [ "$REPORT_TYPE" = "auto" ]; then
+            if [ "$DAY_OF_WEEK" = "1" ] && [ "$DAY_OF_MONTH" -ge 1 ] && [ "$DAY_OF_MONTH" -le 7 ]; then
+              REPORT_TYPE="monthly"
+              echo "📊 MONTHLY report (First Monday of month)"
+            elif [ "$DAY_OF_WEEK" = "1" ]; then
+              REPORT_TYPE="weekly"
+              echo "📊 WEEKLY report (Monday)"
+            else
+              REPORT_TYPE="daily"
+              echo "📊 DAILY report (Regular weekday)"
+            fi
+          fi
+          
+          echo "report_type=${REPORT_TYPE}" >> $GITHUB_OUTPUT
+          echo "✅ Final decision: ${REPORT_TYPE}"
+
+      - name: Generate and send report
+        if: steps.report.outputs.report_type != 'skip'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          REPORT_TYPE="${{ steps.report.outputs.report_type }}"
+          
+          echo "🚀 Generating ${REPORT_TYPE} report..."
+          
+          # Execute the main script
+          node generate-full-report.js $REPORT_TYPE
+          
+          echo "✅ ${REPORT_TYPE} report generated and sent successfully!"
+          
+      - name: Execution summary
+        if: always()
+        run: |
+          echo ""
+          echo "📊 Execution Summary"
+          echo "==================="
+          echo "Report type: ${{ steps.report.outputs.report_type }}"
+          echo "Workflow status: ${{ job.status }}"
+          echo "Execution time: $(date '+%Y-%m-%d %H:%M:%S KST')"
+          
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "🎉 Workflow completed successfully!"
+          else
+            echo "❌ Workflow failed - check logs above for details"
+          fi

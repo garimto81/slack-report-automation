@@ -1,0 +1,53 @@
+{
+  "cameraTasksList": [
+    {
+      "task": "포커 시연용 카메라 6대 설치",
+      "oneLiner": "시연 카메라 세팅",
+      "purpose": "NSUS GFX 개발팀 시연 테스트 환경 구축",
+      "context": "GFX 소프트웨어 구동 방식 확인 및 이해",
+      "details": "플레이어 카메라(FR7-Live U) 4대, 보드 카메라(미러리스-스위처) 1대, 테이블 탑 카메라(핸디캠-스위처) 1대 설치",
+      "expectedResult": "GFX 개발팀 시연 문제 없이 진행",
+      "assignee": "<@U05MYPN16Q3>, <@U040HCT21CL>",
+      "priority": 1,
+      "deadline": "8월 7일(목) 오전 10시 ~",
+      "progress": "100%",
+      "category": "촬영",
+      "reasoning": "카메라 설치 및 세팅, 촬영 장비 관련 업무"
+    }
+  ],
+  "otherTasksList": [
+    {
+      "task": "GFX 시연 테스트 환경 구축",
+      "oneLiner": "GFX 시연 환경 구축",
+      "purpose": "NSUS GFX 개발팀 시연 테스트 지원",
+      "department": "IT/시스템 관리",
+      "details": "GFX 프로그램 구동 확인 위한 최소 환경 구축 (프리 카메라 제외), 스위처 및 GGP 오퍼레이터 세팅 지원"
+    },
+    {
+      "task": "Slack 채널 통합",
+      "oneLiner": "Slack 채널 연동",
+      "purpose": "채널 통합 및 정보 공유",
+      "department": "IT/시스템 관리",
+      "details": "GGPNotice 채널 통합"
+    }
+  ],
+  "summary": {
+    "totalMessages": 4,
+    "cameraTasksCount": 1,
+    "otherTasksCount": 2,
+    "activeUsers": [
+      "Aiden Kim",
+      "Kai Kim",
+      "<@U05MYPN16Q3>",
+      "<@U040HCT21CL>",
+      "<@U05QNJWPFBJ>",
+      "<@U040EUZ6JRY>",
+      "<@U080BA70DC4>"
+    ],
+    "mainTopics": [
+      "GFX 시연 테스트 환경 구축",
+      "카메라 세팅"
+    ],
+    "urgentItems": []
+  }
+}
