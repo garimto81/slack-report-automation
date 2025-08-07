@@ -40,6 +40,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Verify files
+        run: |
+          echo "📁 Current directory: $(pwd)"
+          echo "📋 Files in directory:"
+          ls -la
+          echo "📦 Checking for package files:"
+          [ -f "package.json" ] && echo "✅ package.json exists" || echo "❌ package.json not found"
+          [ -f "package-lock.json" ] && echo "✅ package-lock.json exists" || echo "❌ package-lock.json not found"
+
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
