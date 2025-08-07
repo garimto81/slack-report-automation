@@ -204,26 +204,84 @@ async function updateGoogleDocs(tasks) {
                 // 업무명 열과 핵심내용 열 인덱스
                 const taskNameCol = headers.indexOf('진행 중인 업무 명칭');
                 const coreContentCol = headers.indexOf('핵심 내용(방향성)');
+                const progressCol = headers.indexOf('진행사항');
                 
+                // 업무명 셀 처리
                 if (taskNameCol !== -1 && row.tableCells[taskNameCol]) {
-                    const currentTaskName = extractCellText(row.tableCells[taskNameCol]);
-                    if (currentTaskName) {
+                    const taskCell = row.tableCells[taskNameCol];
+                    const currentTaskName = extractCellText(taskCell);
+                    
+                    if (currentTaskName.length === 0) {
+                        // 빈 셀 - insertText 사용
+                        const elements = taskCell.content[0]?.paragraph?.elements || [];
+                        if (elements.length > 0) {
+                            requests.push({
+                                insertText: {
+                                    location: { index: elements[0].startIndex },
+                                    text: task.taskName
+                                }
+                            });
+                        }
+                    } else {
+                        // 기존 텍스트 있음 - replaceAllText 사용
                         requests.push({
                             replaceAllText: {
-                                containsText: { text: currentTaskName, matchCase: true },
+                                containsText: { text: currentTaskName, matchCase: false },
                                 replaceText: task.taskName
                             }
                         });
                     }
                 }
                 
+                // 핵심내용 셀 처리
                 if (coreContentCol !== -1 && row.tableCells[coreContentCol]) {
-                    const currentCoreContent = extractCellText(row.tableCells[coreContentCol]);
-                    if (currentCoreContent) {
+                    const coreCell = row.tableCells[coreContentCol];
+                    const currentCoreContent = extractCellText(coreCell);
+                    
+                    if (currentCoreContent.length === 0) {
+                        // 빈 셀 - insertText 사용
+                        const elements = coreCell.content[0]?.paragraph?.elements || [];
+                        if (elements.length > 0) {
+                            requests.push({
+                                insertText: {
+                                    location: { index: elements[0].startIndex },
+                                    text: task.coreContent
+                                }
+                            });
+                        }
+                    } else {
+                        // 기존 텍스트 있음 - replaceAllText 사용
                         requests.push({
                             replaceAllText: {
-                                containsText: { text: currentCoreContent, matchCase: true },
+                                containsText: { text: currentCoreContent, matchCase: false },
                                 replaceText: task.coreContent
+                            }
+                        });
+                    }
+                }
+                
+                // 진행사항 50%로 설정
+                if (progressCol !== -1 && row.tableCells[progressCol]) {
+                    const progressCell = row.tableCells[progressCol];
+                    const currentProgress = extractCellText(progressCell);
+                    
+                    if (currentProgress.length === 0) {
+                        // 빈 셀 - insertText 사용
+                        const elements = progressCell.content[0]?.paragraph?.elements || [];
+                        if (elements.length > 0) {
+                            requests.push({
+                                insertText: {
+                                    location: { index: elements[0].startIndex },
+                                    text: "50%"
+                                }
+                            });
+                        }
+                    } else {
+                        // 기존 텍스트 있음 - replaceAllText 사용
+                        requests.push({
+                            replaceAllText: {
+                                containsText: { text: currentProgress, matchCase: false },
+                                replaceText: "50%"
                             }
                         });
                     }
