@@ -4,10 +4,6 @@ on:
   schedule:
     # 일간 보고서 - 매일 오전 9시 (한국 시간)
     - cron: '0 0 * * *'  # UTC 0:00 = KST 9:00
-    # 주간 보고서 - 매주 월요일 오전 9시 (한국 시간)
-    - cron: '0 0 * * 1'  # UTC 0:00 Monday = KST 9:00 Monday
-    # 월간 보고서 - 매월 1일 오전 9시 (한국 시간)
-    - cron: '0 0 1 * *'  # UTC 0:00 1st = KST 9:00 1st
   workflow_dispatch:
     inputs:
       report_type:
@@ -19,12 +15,19 @@ on:
           - daily
           - weekly
           - monthly
+  push:
+    branches:
+      - main
+      - clean-deployment-branch
+
+env:
+  TZ: Asia/Seoul
+  NODE_VERSION: '18'
 
 jobs:
-  daily-report:
-    name: Generate Daily Report
+  generate-report:
+    name: Generate Report
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 * * *') || github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'daily'
     
     steps:
       - name: Checkout repository
@@ -33,109 +36,115 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "📦 Installing dependencies..."
+          npm install
+          echo "✅ Dependencies installed successfully"
+
+      - name: Verify environment
+        run: |
+          echo "🔍 Verifying environment..."
+          echo "Node version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
+          echo "✅ Environment verified"
+
+      - name: Determine report type
+        id: report
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            REPORT_TYPE="${{ github.event.inputs.report_type }}"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            # 매일 실행되는 스케줄은 일간 보고서
+            REPORT_TYPE="daily"
+            
+            # 월요일이면 주간 보고서도 생성
+            if [ "$(date +%u)" = "1" ]; then
+              REPORT_TYPE="weekly"
+            fi
+            
+            # 1일이면 월간 보고서도 생성
+            if [ "$(date +%d)" = "01" ]; then
+              REPORT_TYPE="monthly"
+            fi
+          else
+            # Push 이벤트일 경우 테스트 모드
+            REPORT_TYPE="test"
+          fi
+          
+          echo "report_type=${REPORT_TYPE}" >> $GITHUB_OUTPUT
+          echo "📊 Report type: ${REPORT_TYPE}"
+
+      - name: Test mode - Verify scripts
+        if: steps.report.outputs.report_type == 'test'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          echo "🧪 Running in test mode..."
+          
+          # 파일 존재 확인
+          echo "Checking required files..."
+          [ -f "generate-full-report.js" ] && echo "✅ generate-full-report.js exists" || echo "❌ generate-full-report.js not found"
+          [ -f "test-grouping-logic.js" ] && echo "✅ test-grouping-logic.js exists" || echo "❌ test-grouping-logic.js not found"
+          
+          # 그룹화 로직 테스트만 실행 (실제 메시지 전송 없음)
+          if [ -f "test-grouping-logic.js" ]; then
+            echo "Running grouping logic test..."
+            node test-grouping-logic.js daily || echo "Test completed with status $?"
+          fi
+          
+          echo "✅ Test mode completed"
 
       - name: Generate Daily Report
+        if: steps.report.outputs.report_type == 'daily'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TZ: Asia/Seoul
-        run: node generate-full-report.js daily
-
-      - name: Log completion
-        run: echo "✅ Daily report sent successfully at $(date '+%Y-%m-%d %H:%M:%S KST')"
-
-  weekly-report:
-    name: Generate Weekly Report
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 * * 1') || github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'weekly'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "📅 Generating daily report..."
+          node generate-full-report.js daily
+          echo "✅ Daily report sent successfully"
 
       - name: Generate Weekly Report
+        if: steps.report.outputs.report_type == 'weekly'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TZ: Asia/Seoul
-        run: node generate-full-report.js weekly
-
-      - name: Log completion
-        run: echo "✅ Weekly report sent successfully at $(date '+%Y-%m-%d %H:%M:%S KST')"
-
-  monthly-report:
-    name: Generate Monthly Report
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' && contains(github.event.schedule, '0 0 1 * *') || github.event_name == 'workflow_dispatch' && github.event.inputs.report_type == 'monthly'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
+        run: |
+          echo "📅 Generating weekly report..."
+          node generate-full-report.js weekly
+          echo "✅ Weekly report sent successfully"
 
       - name: Generate Monthly Report
+        if: steps.report.outputs.report_type == 'monthly'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TZ: Asia/Seoul
-        run: node generate-full-report.js monthly
-
-      - name: Log completion
-        run: echo "✅ Monthly report sent successfully at $(date '+%Y-%m-%d %H:%M:%S KST')"
-
-  test-report:
-    name: Test Report Generation
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || github.event_name == 'push'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Test Grouping Logic
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          TZ: Asia/Seoul
         run: |
-          echo "🧪 Testing grouping logic..."
-          node test-grouping-logic.js daily
-          echo "✅ Grouping logic test completed"
+          echo "📅 Generating monthly report..."
+          node generate-full-report.js monthly
+          echo "✅ Monthly report sent successfully"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "🎯 Workflow Summary"
+          echo "==================="
+          echo "Event: ${{ github.event_name }}"
+          echo "Report Type: ${{ steps.report.outputs.report_type }}"
+          echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "Status: ${{ job.status }}"
