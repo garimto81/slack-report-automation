@@ -2,19 +2,21 @@ name: Automated Slack Reports
 
 on:
   schedule:
-    # 일간 보고서 - 매일 오전 9시 (한국 시간)
-    - cron: '0 0 * * *'  # UTC 0:00 = KST 9:00
+    # 평일 오전 9시만 실행 (월-금, 한국 시간)
+    # UTC 0:00 = KST 9:00
+    - cron: '0 0 * * 1-5'  # 월요일(1) ~ 금요일(5)
   workflow_dispatch:
     inputs:
       report_type:
         description: 'Report type to generate'
         required: true
-        default: 'daily'
+        default: 'auto'
         type: choice
         options:
-          - daily
-          - weekly
-          - monthly
+          - auto      # 자동 판단
+          - daily     # 일간 보고서
+          - weekly    # 주간 보고서
+          - monthly   # 월간 보고서
   push:
     branches:
       - main
@@ -44,43 +46,65 @@ jobs:
           npm install
           echo "✅ Dependencies installed successfully"
 
-      - name: Verify environment
-        run: |
-          echo "🔍 Verifying environment..."
-          echo "Node version: $(node --version)"
-          echo "NPM version: $(npm --version)"
-          echo "Current directory: $(pwd)"
-          echo "Files in directory:"
-          ls -la
-          echo "✅ Environment verified"
-
       - name: Determine report type
         id: report
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            REPORT_TYPE="${{ github.event.inputs.report_type }}"
-          elif [ "${{ github.event_name }}" = "schedule" ]; then
-            # 매일 실행되는 스케줄은 일간 보고서
-            REPORT_TYPE="daily"
-            
-            # 월요일이면 주간 보고서도 생성
-            if [ "$(date +%u)" = "1" ]; then
-              REPORT_TYPE="weekly"
+          echo "🔍 Determining report type..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📅 Date: $(TZ=Asia/Seoul date '+%Y-%m-%d %A')"
+          echo "🕐 Time: $(TZ=Asia/Seoul date '+%H:%M:%S KST')"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          REPORT_TYPE=""
+          DAY_OF_WEEK=$(date +%u)
+          DAY_OF_MONTH=$(date +%d)
+          
+          # 주말 체크
+          if [ $DAY_OF_WEEK -ge 6 ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "🚫 Weekend detected - skipping automatic report"
+            REPORT_TYPE="skip"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # 수동 실행
+            if [ "${{ github.event.inputs.report_type }}" = "auto" ]; then
+              echo "🤖 Auto mode selected - applying priority rules"
+            else
+              REPORT_TYPE="${{ github.event.inputs.report_type }}"
+              echo "👤 Manual override: $REPORT_TYPE"
             fi
-            
-            # 1일이면 월간 보고서도 생성
-            if [ "$(date +%d)" = "01" ]; then
-              REPORT_TYPE="monthly"
-            fi
-          else
-            # Push 이벤트일 경우 테스트 모드
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            # Push 이벤트는 테스트 모드
             REPORT_TYPE="test"
+            echo "🧪 Test mode for push event"
+          fi
+          
+          # 자동 우선순위 판단 (월간 > 주간 > 일간)
+          if [ -z "$REPORT_TYPE" ] || [ "$REPORT_TYPE" = "auto" ]; then
+            if [ "$DAY_OF_MONTH" = "01" ]; then
+              REPORT_TYPE="monthly"
+              echo "📊 Priority 1: MONTHLY (1st of month)"
+              echo "💡 This replaces weekly and daily reports"
+            elif [ "$DAY_OF_WEEK" = "1" ]; then
+              REPORT_TYPE="weekly"
+              echo "📊 Priority 2: WEEKLY (Monday)"
+              echo "💡 This replaces daily report"
+            else
+              REPORT_TYPE="daily"
+              echo "📊 Priority 3: DAILY (regular weekday)"
+            fi
           fi
           
           echo "report_type=${REPORT_TYPE}" >> $GITHUB_OUTPUT
-          echo "📊 Report type: ${REPORT_TYPE}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Decision: ${REPORT_TYPE}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: Test mode - Verify scripts
+      - name: Skip weekend
+        if: steps.report.outputs.report_type == 'skip'
+        run: |
+          echo "⏭️ Skipping weekend execution"
+          exit 0
+
+      - name: Test mode
         if: steps.report.outputs.report_type == 'test'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -88,63 +112,36 @@ jobs:
           SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          echo "🧪 Running in test mode..."
-          
-          # 파일 존재 확인
-          echo "Checking required files..."
-          [ -f "generate-full-report.js" ] && echo "✅ generate-full-report.js exists" || echo "❌ generate-full-report.js not found"
-          [ -f "test-grouping-logic.js" ] && echo "✅ test-grouping-logic.js exists" || echo "❌ test-grouping-logic.js not found"
-          
-          # 그룹화 로직 테스트만 실행 (실제 메시지 전송 없음)
+          echo "🧪 Running test mode..."
           if [ -f "test-grouping-logic.js" ]; then
-            echo "Running grouping logic test..."
-            node test-grouping-logic.js daily || echo "Test completed with status $?"
+            node test-grouping-logic.js daily || true
           fi
+          echo "✅ Test completed"
+
+      - name: Generate Report
+        if: steps.report.outputs.report_type != 'skip' && steps.report.outputs.report_type != 'test'
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          REPORT_TYPE="${{ steps.report.outputs.report_type }}"
           
-          echo "✅ Test mode completed"
-
-      - name: Generate Daily Report
-        if: steps.report.outputs.report_type == 'daily'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "📅 Generating daily report..."
-          node generate-full-report.js daily
-          echo "✅ Daily report sent successfully"
-
-      - name: Generate Weekly Report
-        if: steps.report.outputs.report_type == 'weekly'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "📅 Generating weekly report..."
-          node generate-full-report.js weekly
-          echo "✅ Weekly report sent successfully"
-
-      - name: Generate Monthly Report
-        if: steps.report.outputs.report_type == 'monthly'
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
-          SLACK_DM_USER_IDS: ${{ secrets.SLACK_DM_USER_IDS }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          echo "📅 Generating monthly report..."
-          node generate-full-report.js monthly
-          echo "✅ Monthly report sent successfully"
+          echo "╔═══════════════════════════════════╗"
+          echo "║   Generating ${REPORT_TYPE^^} Report    ║"
+          echo "╚═══════════════════════════════════╝"
+          
+          node generate-full-report.js $REPORT_TYPE
+          
+          echo "✅ ${REPORT_TYPE} report sent successfully"
 
       - name: Summary
         if: always()
         run: |
-          echo "🎯 Workflow Summary"
-          echo "==================="
-          echo "Event: ${{ github.event_name }}"
-          echo "Report Type: ${{ steps.report.outputs.report_type }}"
-          echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo ""
+          echo "📊 Execution Summary"
+          echo "━━━━━━━━━━━━━━━━━━"
+          echo "Report: ${{ steps.report.outputs.report_type }}"
+          echo "Time: $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S KST')"
           echo "Status: ${{ job.status }}"
