@@ -48,6 +48,12 @@ function getAnalysisDate() {
 }
 
 function shouldRunUpdate() {
+    // 강제 실행 모드 확인
+    if (process.env.FORCE_RUN === 'true') {
+        console.log('🔧 강제 실행 모드 활성화');
+        return true;
+    }
+    
     const now = getKoreanTime();
     const dayOfWeek = now.getDay();
     const hour = now.getHours();
@@ -196,98 +202,67 @@ async function updateGoogleDocs(tasks) {
         const requests = [];
         
         // 각 카메라 행의 현재 데이터를 새 데이터로 교체
+        const taskNameCol = headers.indexOf('진행 중인 업무 명칭');
+        const coreContentCol = headers.indexOf('핵심 내용(방향성)');
+        const progressCol = headers.indexOf('진행사항');
+        const linkCol = headers.indexOf('문서 링크');
+        
+        console.log(`📋 컬럼 위치: 업무명(${taskNameCol + 1}), 핵심내용(${coreContentCol + 1}), 진행사항(${progressCol + 1}), 링크(${linkCol + 1})\n`);
+        
         cameraRows.forEach((rowIndex, idx) => {
             if (idx < tasks.length && rowIndex < rows.length) {
                 const task = tasks[idx];
                 const row = rows[rowIndex];
                 
-                // 업무명 열과 핵심내용 열 인덱스
-                const taskNameCol = headers.indexOf('진행 중인 업무 명칭');
-                const coreContentCol = headers.indexOf('핵심 내용(방향성)');
-                const progressCol = headers.indexOf('진행사항');
+                console.log(`📝 행 ${rowIndex + 1} 처리: "${task.taskName}"`);
                 
-                // 업무명 셀 처리
-                if (taskNameCol !== -1 && row.tableCells[taskNameCol]) {
-                    const taskCell = row.tableCells[taskNameCol];
-                    const currentTaskName = extractCellText(taskCell);
+                // 업무명 처리
+                if (taskNameCol !== -1) {
+                    const result = processCellUpdate(
+                        row.tableCells[taskNameCol], 
+                        task.taskName, 
+                        `업무명`
+                    );
+                    if (result) requests.push(result);
+                }
+                
+                // 핵심내용 처리
+                if (coreContentCol !== -1) {
+                    const result = processCellUpdate(
+                        row.tableCells[coreContentCol], 
+                        task.coreContent, 
+                        `핵심내용`
+                    );
+                    if (result) requests.push(result);
+                }
+                
+                // 진행사항 처리 (항상 50%)
+                if (progressCol !== -1) {
+                    const result = processCellUpdate(
+                        row.tableCells[progressCol], 
+                        '50%', 
+                        `진행사항`
+                    );
+                    if (result) requests.push(result);
+                }
+                
+                // 문서 링크 삭제
+                if (linkCol !== -1) {
+                    const linkCell = row.tableCells[linkCol];
+                    const currentLink = extractCellText(linkCell);
                     
-                    if (currentTaskName.length === 0) {
-                        // 빈 셀 - insertText 사용
-                        const elements = taskCell.content[0]?.paragraph?.elements || [];
-                        if (elements.length > 0) {
-                            requests.push({
-                                insertText: {
-                                    location: { index: elements[0].startIndex },
-                                    text: task.taskName
-                                }
-                            });
-                        }
-                    } else {
-                        // 기존 텍스트 있음 - replaceAllText 사용
+                    if (currentLink.length > 0) {
+                        console.log(`  🔗 링크 삭제: "${currentLink}"`);
                         requests.push({
                             replaceAllText: {
-                                containsText: { text: currentTaskName, matchCase: false },
-                                replaceText: task.taskName
+                                containsText: { text: currentLink, matchCase: false },
+                                replaceText: ''
                             }
                         });
                     }
                 }
                 
-                // 핵심내용 셀 처리
-                if (coreContentCol !== -1 && row.tableCells[coreContentCol]) {
-                    const coreCell = row.tableCells[coreContentCol];
-                    const currentCoreContent = extractCellText(coreCell);
-                    
-                    if (currentCoreContent.length === 0) {
-                        // 빈 셀 - insertText 사용
-                        const elements = coreCell.content[0]?.paragraph?.elements || [];
-                        if (elements.length > 0) {
-                            requests.push({
-                                insertText: {
-                                    location: { index: elements[0].startIndex },
-                                    text: task.coreContent
-                                }
-                            });
-                        }
-                    } else {
-                        // 기존 텍스트 있음 - replaceAllText 사용
-                        requests.push({
-                            replaceAllText: {
-                                containsText: { text: currentCoreContent, matchCase: false },
-                                replaceText: task.coreContent
-                            }
-                        });
-                    }
-                }
-                
-                // 진행사항 50%로 설정
-                if (progressCol !== -1 && row.tableCells[progressCol]) {
-                    const progressCell = row.tableCells[progressCol];
-                    const currentProgress = extractCellText(progressCell);
-                    
-                    if (currentProgress.length === 0) {
-                        // 빈 셀 - insertText 사용
-                        const elements = progressCell.content[0]?.paragraph?.elements || [];
-                        if (elements.length > 0) {
-                            requests.push({
-                                insertText: {
-                                    location: { index: elements[0].startIndex },
-                                    text: "50%"
-                                }
-                            });
-                        }
-                    } else {
-                        // 기존 텍스트 있음 - replaceAllText 사용
-                        requests.push({
-                            replaceAllText: {
-                                containsText: { text: currentProgress, matchCase: false },
-                                replaceText: "50%"
-                            }
-                        });
-                    }
-                }
-                
-                console.log(`📋 행 ${rowIndex + 1} 업데이트: "${task.taskName}"`);
+                console.log(''); // 빈 줄
             }
         });
         
@@ -307,6 +282,48 @@ async function updateGoogleDocs(tasks) {
     } catch (error) {
         console.error('❌ 구글 문서 업데이트 실패:', error.message);
         return false;
+    }
+}
+
+/**
+ * 셀 업데이트 처리 (빈 셀/기존 텍스트 자동 판단)
+ */
+function processCellUpdate(cell, newText, description) {
+    if (!cell || !newText) return null;
+    
+    try {
+        const currentText = extractCellText(cell);
+        const elements = cell.content[0]?.paragraph?.elements || [];
+        
+        console.log(`  📝 ${description}: "${currentText}" → "${newText}"`);
+        
+        if (currentText.length === 0) {
+            // 빈 셀 - insertText 사용
+            if (elements.length > 0 && elements[0].startIndex !== undefined) {
+                console.log(`    방법: insertText (빈 셀)`);
+                return {
+                    insertText: {
+                        location: { index: elements[0].startIndex },
+                        text: newText
+                    }
+                };
+            } else {
+                console.log(`    ⚠️ 스킵: 유효한 인덱스 없음`);
+                return null;
+            }
+        } else {
+            // 기존 텍스트 - replaceAllText 사용
+            console.log(`    방법: replaceAllText (기존 텍스트)`);
+            return {
+                replaceAllText: {
+                    containsText: { text: currentText, matchCase: false },
+                    replaceText: newText
+                }
+            };
+        }
+    } catch (error) {
+        console.log(`    ❌ 처리 실패: ${error.message}`);
+        return null;
     }
 }
 
