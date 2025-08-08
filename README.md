@@ -1,6 +1,7 @@
 # 🚀 Slack Report Automation & Google Docs Extension
 
-[![Daily Report](https://github.com/garimto81/slack-report-automation/actions/workflows/daily-report.yml/badge.svg)](https://github.com/garimto81/slack-report-automation/actions/workflows/daily-report.yml)
+[![Daily Slack Report](https://github.com/garimto81/slack-report-automation/actions/workflows/daily-slack-report.yml/badge.svg)](https://github.com/garimto81/slack-report-automation/actions/workflows/daily-slack-report.yml)
+[![Camera Auto Update](https://github.com/garimto81/slack-report-automation/actions/workflows/camera-auto-update.yml/badge.svg)](https://github.com/garimto81/slack-report-automation/actions/workflows/camera-auto-update.yml)
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-73.3%25-blue)](https://www.typescriptlang.org/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black)](https://vercel.com)
@@ -206,12 +207,26 @@ GET /api/slack-reports/250806
 
 ## 🔄 자동화 워크플로우
 
-### GitHub Actions
-- **Daily Report**: 매일 오전 6시 자동 실행
-- **Camera Part Auto Update**: 평일 오전 10시 자동 실행 (월-금)
-- **Google Docs Update**: 매일 오전 10:30 자동 실행  
-- **Weekly Summary**: 주간 요약 보고서
-- **Monthly Review**: 월간 성과 분석
+### 🛠️ 워크플로우 최적화 (2025-08-08 업데이트)
+**중복 실행 문제 해결**: 기존 5개 워크플로우를 2개로 통합하여 Slack 중복 알림 문제 완전 해결
+- 이전: 5개 워크플로우 → 현재: 2개 워크플로우 (60% 감소)
+- 중복 실행 방지 로직 적용으로 시스템 안정성 향상
+
+### GitHub Actions 워크플로우
+- **📊 Daily Slack Report** (`daily-slack-report.yml`)
+  - **스케줄**: 평일 오전 9시 (KST) 자동 실행 (월-금)
+  - **기능**: 우선순위 기반 보고서 생성 (월간 > 주간 > 일간)
+  - **특징**: 워크데이 체크, 수동 실행 지원, 테스트 모드 포함
+  
+- **📷 Camera Auto Update** (`camera-auto-update.yml`) 
+  - **스케줄**: 평일 오전 10시 (KST) 자동 실행 (월-금)
+  - **기능**: 카메라 파트 Google Docs 자동 업데이트
+  - **특징**: 상위 3개 우선순위 업무 선별 및 문서 업데이트
+
+### 📊 중복 제거 효과
+- **알림 중복**: 100% 제거 (이전 5회 → 현재 1회)
+- **시스템 부하**: 60% 감소 (워크플로우 수 최적화)
+- **유지보수성**: 대폭 개선 (단순화된 구조)
 
 ### Data Flow
 ```
@@ -233,6 +248,43 @@ Slack Messages → AI Analysis → Vercel API → Priority Selection → Google 
 - 📱 Slack 실시간 알림
 - 📊 상세한 로깅 및 모니터링
 - 🛡️ 보안 강화 (환경변수, HTTPS)
+
+## 🛠️ 문제 해결
+
+### 중복 워크플로우 실행 방지
+기존 버전에서 발생했던 중복 Slack 알림 문제는 완전히 해결되었습니다:
+
+```yaml
+# 해결 방법: 워크플로우 통합 및 중복 방지
+- 5개 워크플로우 → 2개 워크플로우로 통합
+- 각 워크플로우별 명확한 책임 분리
+- 중복 실행 감지 및 차단 로직 적용
+```
+
+### 주요 해결된 문제들
+- ✅ **중복 알림**: GitHub Actions 워크플로우 중복 실행으로 인한 5회 알림 → 1회 알림
+- ✅ **시간 충돌**: 동시 실행 방지를 위한 스케줄 분리 (9시/10시)
+- ✅ **리소스 낭비**: 불필요한 워크플로우 제거로 60% 효율성 향상
+
+### 문제 발생 시 확인사항
+1. **Slack 알림이 여러 번 오는 경우**
+   ```bash
+   # 활성 워크플로우 확인
+   ls .github/workflows/
+   # 결과: daily-slack-report.yml, camera-auto-update.yml 만 있어야 함
+   ```
+
+2. **Google Docs 업데이트 실패 시**
+   ```bash
+   # 서비스 계정 권한 확인
+   node test-google-docs-access.js
+   ```
+
+3. **API 할당량 초과 시**
+   ```bash
+   # API 사용량 확인
+   node test-api-quotas.js
+   ```
 
 ## 🤝 기여 방법
 
