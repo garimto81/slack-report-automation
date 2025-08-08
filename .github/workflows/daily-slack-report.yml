@@ -1,4 +1,4 @@
-name: Automated Slack Reports (Weekday Only)
+name: Daily Slack Report
 
 on:
   schedule:
