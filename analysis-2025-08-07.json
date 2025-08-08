@@ -1,52 +1,78 @@
 {
   "cameraTasksList": [
     {
-      "task": "포커 시연용 카메라 6대 설치",
-      "oneLiner": "시연 카메라 세팅",
-      "purpose": "NSUS GFX 개발팀 시연 테스트 환경 구축",
-      "context": "GFX 소프트웨어 구동 방식 확인 및 이해",
-      "details": "플레이어 카메라(FR7-Live U) 4대, 보드 카메라(미러리스-스위처) 1대, 테이블 탑 카메라(핸디캠-스위처) 1대 설치",
-      "expectedResult": "GFX 개발팀 시연 문제 없이 진행",
-      "assignee": "<@U05MYPN16Q3>, <@U040HCT21CL>",
-      "priority": 1,
-      "deadline": "8월 7일(목) 오전 10시 ~",
-      "progress": "100%",
-      "category": "촬영",
-      "reasoning": "카메라 설치 및 세팅, 촬영 장비 관련 업무"
+      "task": "ColorChecker, Light Meter, Tally System 구매 및 배송 확인",
+      "oneLiner": "카메라 장비 구매 및 배송",
+      "purpose": "촬영 장비 확보",
+      "context": "영상 촬영을 위한 필수 장비 구매",
+      "details": "ColorChecker 배송 완료, Light Meter 배송 중, Tally System 해외 배송 예정 (18일), TVLogic 다음주 12일 도착 예정",
+      "expectedResult": "장비 확보 및 촬영 준비 완료",
+      "assignee": "Kai Kim, <@U040EUZ6JRY>, <@U040HCT21CL>, <@U05QNJWPFBJ>",
+      "priority": 2,
+      "deadline": "8월 18일 (Tally System)",
+      "progress": "ColorChecker: 100%, Light Meter: 50%, Tally System: 50%, TVLogic: 0%",
+      "category": "장비",
+      "reasoning": "촬영 장비(ColorChecker, Light Meter, Tally System, TVLogic) 구매 및 배송 관련 업무"
+    },
+    {
+      "task": "Tally System 스위처 테스트",
+      "oneLiner": "Tally System 테스트",
+      "purpose": "장비 작동 확인",
+      "context": "Tally System의 스위처와의 호환성 확인",
+      "details": "Tally System을 스위처에 연결하여 작동 테스트",
+      "expectedResult": "Tally System 정상 작동 확인",
+      "assignee": "Kai Kim, <@U040EUZ6JRY>, <@U040HCT21CL>, <@U05QNJWPFBJ>",
+      "priority": 3,
+      "deadline": "8월 7일",
+      "progress": "진행 중",
+      "category": "장비",
+      "reasoning": "촬영 장비(Tally System) 테스트"
+    },
+    {
+      "task": "TVLogic 케이스 제작",
+      "oneLiner": "TVLogic 케이스 제작",
+      "purpose": "장비 보호",
+      "context": "TVLogic 보호를 위한 케이스 제작",
+      "details": "TVLogic 장비를 위한 맞춤 케이스 제작",
+      "expectedResult": "TVLogic 보호 케이스 완성",
+      "assignee": "Kai Kim, <@U040EUZ6JRY>, <@U040HCT21CL>, <@U05QNJWPFBJ>",
+      "priority": 4,
+      "deadline": "8월 12일",
+      "progress": "미완료",
+      "category": "장비",
+      "reasoning": "촬영 장비(TVLogic) 관련 케이스 제작"
     }
   ],
   "otherTasksList": [
     {
-      "task": "GFX 시연 테스트 환경 구축",
-      "oneLiner": "GFX 시연 환경 구축",
-      "purpose": "NSUS GFX 개발팀 시연 테스트 지원",
-      "department": "IT/시스템 관리",
-      "details": "GFX 프로그램 구동 확인 위한 최소 환경 구축 (프리 카메라 제외), 스위처 및 GGP 오퍼레이터 세팅 지원"
+      "task": "현장 프로듀서 커뮤니케이션 라인 정리 및 업무 프로토콜, 스케줄러 제작",
+      "oneLiner": "프로덕션 업무 프로토콜 정립",
+      "purpose": "효율적인 현장 운영",
+      "department": "제작부",
+      "details": "현장 총괄 프로듀서 커뮤니케이션 라인 정리, 업무 프로토콜 명확화, 스케줄러를 통한 업무 관리"
     },
     {
-      "task": "Slack 채널 통합",
-      "oneLiner": "Slack 채널 연동",
-      "purpose": "채널 통합 및 정보 공유",
-      "department": "IT/시스템 관리",
-      "details": "GGPNotice 채널 통합"
+      "task": "Slack 채널에 GGPNotice 통합",
+      "oneLiner": "GGPNotice 채널 통합",
+      "purpose": "정보 공유 효율화",
+      "department": "IT",
+      "details": "Slack 채널에 GGPNotice 서비스 통합"
     }
   ],
   "summary": {
-    "totalMessages": 4,
-    "cameraTasksCount": 1,
+    "totalMessages": 3,
+    "cameraTasksCount": 3,
     "otherTasksCount": 2,
     "activeUsers": [
-      "Aiden Kim",
       "Kai Kim",
-      "<@U05MYPN16Q3>",
-      "<@U040HCT21CL>",
-      "<@U05QNJWPFBJ>",
+      "Aiden Kim",
       "<@U040EUZ6JRY>",
-      "<@U080BA70DC4>"
+      "<@U040HCT21CL>",
+      "<@U05QNJWPFBJ>"
     ],
     "mainTopics": [
-      "GFX 시연 테스트 환경 구축",
-      "카메라 세팅"
+      "카메라 장비 구매 및 관리",
+      "프로덕션 업무 프로토콜"
     ],
     "urgentItems": []
   }

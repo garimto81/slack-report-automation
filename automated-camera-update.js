@@ -286,34 +286,23 @@ async function updateGoogleDocs(tasks) {
 }
 
 /**
- * 셀 업데이트 처리 (빈 셀/기존 텍스트 자동 판단)
+ * 셀 업데이트 처리 (안전한 replaceAllText만 사용)
  */
 function processCellUpdate(cell, newText, description) {
     if (!cell || !newText) return null;
     
     try {
         const currentText = extractCellText(cell);
-        const elements = cell.content[0]?.paragraph?.elements || [];
         
         console.log(`  📝 ${description}: "${currentText}" → "${newText}"`);
         
         if (currentText.length === 0) {
-            // 빈 셀 - insertText 사용
-            if (elements.length > 0 && elements[0].startIndex !== undefined) {
-                console.log(`    방법: insertText (빈 셀)`);
-                return {
-                    insertText: {
-                        location: { index: elements[0].startIndex },
-                        text: newText
-                    }
-                };
-            } else {
-                console.log(`    ⚠️ 스킵: 유효한 인덱스 없음`);
-                return null;
-            }
+            // 빈 셀은 업데이트 스킵 (수동 처리 필요)
+            console.log(`    ⚠️ 스킵: 빈 셀은 수동 처리 필요`);
+            return null;
         } else {
-            // 기존 텍스트 - replaceAllText 사용
-            console.log(`    방법: replaceAllText (기존 텍스트)`);
+            // 기존 텍스트만 replaceAllText로 안전하게 교체
+            console.log(`    방법: replaceAllText (기존 텍스트만)`);
             return {
                 replaceAllText: {
                     containsText: { text: currentText, matchCase: false },
